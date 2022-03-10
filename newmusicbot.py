@@ -18,10 +18,10 @@ from google.auth.transport.requests import _Response, Request
 
 from collections import defaultdict, deque
 
-DEVELOPER_KEY = "AIzaSyCJPpfRppOf1G16xfUbnt8Uug-SxeORpyM"
+DEVELOPER_KEY = "Your google api TOKEN here."
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-TOKEN = "NDM5NjcxMTAyMDYzNzcxNjQ5.WuQRnw.47a1mmbQ2ncxaWpiJ0Vjq2CSX08" #TOKENを入力
+TOKEN = "Your TOKEN here." #TOKENを入力
 
 FFMPEG_OPTIONS= {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5','options': '-vn'}
 #様々な変数の初期値
@@ -47,7 +47,7 @@ queue_title = 0
 loopskip = 0
 queue = queue_dict
 
-pafy.set_api_key("AIzaSyA922hyadZ2CHu7TQLw2S-lK3fpQ3IwlmY")
+pafy.set_api_key("Your google TOKEN here")
 
 #キューの設定
 def enqueue(voice_client, youtube_ur):
