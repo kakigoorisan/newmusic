@@ -347,7 +347,8 @@ async def on_message(message): #メッセージの確認
       
       
     if bef == ".play" or bef == ".p": #指定されたURLの曲を流す。
-        if msg[msg.find(" ") + 1:] == "https://": #youtubeのURLかを判別。
+        idx = msg.find(" ")
+        if msg[idx +1:] == "https://": #youtubeのURLかを判別。
             youtube_url = aft
             if youtube_url[24:32] == "playlist": #プレイリストか判別
               temp = []
