@@ -1,3 +1,5 @@
+from asyncio.events import BaseDefaultEventLoopPolicy
+from operator import truediv
 from xmlrpc.client import Fault
 import pafy
 import argparse
@@ -5,8 +7,6 @@ from discord import FFmpegPCMAudio, PCMVolumeTransformer
 import discord
 from discord import player
 from discord.errors import ClientException
-import youtube_dl
-from youtube_dl import YoutubeDL
 import os
 import asyncio
 
@@ -156,13 +156,12 @@ def ende(queu):
     return
 
 
-
 #ここからdiscord
 @client.event #起動が完了するとコンソールにhiと送り、プレイ中の表示をさせる
 async def on_ready():
     print("hi")
     await client.change_presence(activity=discord.Game(name="hi", type=1))
-    await client.change_presence(activity=discord.Game(name="I'm listening to a music!", type=1))
+    await client.change_presence(activity=discord.Game(name="This bot is currently under maintenance...", type=1))
 
 @client.event
 async def on_message(message): #メッセージの確認
@@ -170,8 +169,12 @@ async def on_message(message): #メッセージの確認
     global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,tit,elect,meme,print_title,queue_title,count_music,loopskip,videid
     meme = message
     msg = message.content 
-  
-    
+    bef = msg[:msg.find(" ")]
+    aft = msg[msg.find(" "):]
+    if msg[0] == ".":
+      print(msg)
+      print(bef)
+      print(aft)
     if message.author.bot: #botの場合反応しない 
         return
 
@@ -265,7 +268,7 @@ async def on_message(message): #メッセージの確認
       #  await message.channel.send("キューの表示時にURLも表示します。")
 
 
-    if msg == ".q": #キューの中身を表示させる。デザインを変えたいね.
+    if msg == ".q" or msg == ".queue": #キューの中身を表示させる。デザインを変えたいね.
      # if queue_title == 0:
       count_music = 1
       for spt in queue_dict:
@@ -280,10 +283,10 @@ async def on_message(message): #メッセージの確認
       if loop == 0:
         await message.channel.send("loop : \N{Cross Mark}")
 
-    if msg == ".skip": #流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
+    if msg == ".skip" or msg == ".s": #流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
       voice.stop()
 
-    if msg== ".loop": #一曲のみのloopをon,offする
+    if msg== ".loop" or msg == ".lp": #一曲のみのloopをon,offする
       if loop == 0:
         loop = 1
         await message.channel.send("loopがonになりました")
@@ -292,7 +295,7 @@ async def on_message(message): #メッセージの確認
         await message.channel.send("loopがoffになりました")
 
 
-    if msg == ".queueloop": #queueloopをon,offする。
+    if msg == ".queueloop" or msg == ".qlp": #queueloopをon,offする。
       if qloo == 0:
         qloo = 1
         await message.channel.send("queueloopがonになりました")
@@ -300,13 +303,23 @@ async def on_message(message): #メッセージの確認
         qloo = 0
         await message.channel.send("queueloopがoffになりました")
 
-    if msg[:3] == ".sc": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
+    if msg == ".lp_info" or msg == ".lpinfo": #loopの状態を確認
+      if qloo == 1:
+        await message.channel.send("queueloop: \N{Heavy Large Circle}")
+      elif qloo == 0:
+        await message.channel.send("queueloop: \N{Cross Mark}")
+      if loop == 1:
+        await message.channel.send("loop: \N{Heavy Large Circle}")
+      elif loop == 0:
+        await message.channel.send("loop : \N{Cross Mark}")
+
+    if bef == ".sc" or bef == ".search": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
       tit = []
       videde = []
       if message.author.voice is None:
         await message.channel.send("ボイスチャットに参加してください.")
         return
-      sss = msg[4:]
+      sss = aft
       youtudeop()
       #youtube_url = f"https://www.youtube.com/watch?v={videde}"
       if voice == None:
@@ -333,19 +346,21 @@ async def on_message(message): #メッセージの確認
       #enqueue(voice,youtube_url)
       
       
-    if msg[:5] == ".play": #指定されたURLの曲を流す。
-        if msg[6:14] == "https://": #youtubeのURLかを判別。7
-            youtube_url = msg[6:]
+    if bef == ".play" or bef == ".p": #指定されたURLの曲を流す。
+        if msg[msg.find(" "):] == "https://": #youtubeのURLかを判別。
+            youtube_url = aft
             if youtube_url[24:32] == "playlist": #プレイリストか判別
               temp = []
               playlist = pafy.get_playlist2(youtube_url)
               for i in range(len(playlist)):
                 temp.append(playlist[i])
               print(temp[0])
+
               for r in range(len(playlist)):
                 ten = str(temp[r])
                 queue_dict.append("https://www.youtube.com/watch?v="+ten[13:24])
               print(queue_dict)
+
               if message.author.voice is None:
                 await message.channel.send("ボイスチャットに参加してください.")
                 return
@@ -362,7 +377,7 @@ async def on_message(message): #メッセージの確認
                 await asyncio.sleep(2)
                 await message.channel.send("playlistを追加しました。")
 
-            else:
+            else: #曲のURLがそのままのとき
                 if message.author.voice is None:
                   await message.channel.send("ボイスチャットに参加してください.")
                   return
@@ -377,12 +392,7 @@ async def on_message(message): #メッセージの確認
                 enqueue(voice,youtube_url)
                 async with message.channel.typing():
                  await asyncio.sleep(2)
-                await message.channel.send("正常に追加されました")
-
-
-            videid = youtube_url
-        
-
+                await message.channel.send("正常に追加されました。")
 
         else:
           videde =[]
@@ -390,7 +400,7 @@ async def on_message(message): #メッセージの確認
           if message.author.voice is None:
             await message.channel.send("ボイスチャットに参加してください.")
             return
-          sss = msg[4:]
+          sss = aft
           youtudeop()
          #youtube_url = f"https://www.youtube.com/watch?v={videde}"
           if voice == None:
