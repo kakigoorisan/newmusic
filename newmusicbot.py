@@ -170,11 +170,13 @@ async def on_message(message): #メッセージの確認
     meme = message
     msg = message.content 
     bef = msg[:msg.find(" ")]
-    aft = msg[msg.find(" "):]
+    afneme = msg[msg.find(" "):]
+    aft = afneme.split(" ")
     if msg[0] == ".":
       print(msg)
       print(bef)
       print(aft)
+      print(afneme)
     if message.author.bot: #botの場合反応しない 
         return
 
@@ -189,7 +191,7 @@ async def on_message(message): #メッセージの確認
         q = f"https://www.youtube.com/watch?v={videid}"
         enqueue(voice ,q)
         async with message.channel.typing():
-          await asyncio.sleep(2)
+          await asyncio.sleep(0.5)
           if print_title == 0:
             await message.channel.send("キューに追加: "+tit[inmsg-1])
           elif print_title == 1:
@@ -207,14 +209,17 @@ async def on_message(message): #メッセージの確認
         await message.channel.send("キューをリセットしました.")
       queue_dict.clear()
     
-    if msg[:7] == ".remove":
-      if msg[8:].isdecimal() == False:
+    if bef == ".remove":
+      if aft.isdecimal() == False:
         return
-      if msg[8:9] == "1":
+      if aft == "1":
         await message.channel.send("現在再生している曲です")
-        
+      
+      elif int(aft) > len(queue_dict):
+        await message.channel.send("範囲外です")
+        return
       else:
-        remint = int(msg[8:]) - 1
+        remint = int(aft) - 1
         temp = queue_dict[remint]
         del queue_dict[remint]
         await message.channel.send(temp + " を削除しました")
@@ -313,13 +318,26 @@ async def on_message(message): #メッセージの確認
       elif loop == 0:
         await message.channel.send("loop : \N{Cross Mark}")
 
+    if bef == ".skipto" or bef == ".skt":
+      if aft[1].isdecimal() == False:
+        return
+      elif int(aft[1]) > len(queue_dict):
+        await message.channel.send("範囲外です")
+        return
+      else:
+        num = int(aft[1]) -1
+        poping = int(aft[1])
+        queue_dict.insert(1,queue_dict[num])
+        del queue_dict[poping]
+        voice.stop()
+      
     if bef == ".sc" or bef == ".search": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
       tit = []
       videde = []
       if message.author.voice is None:
         await message.channel.send("ボイスチャットに参加してください.")
         return
-      sss = aft
+      sss = afneme
       youtudeop()
       #youtube_url = f"https://www.youtube.com/watch?v={videde}"
       if voice == None:
@@ -349,7 +367,7 @@ async def on_message(message): #メッセージの確認
     if bef == ".play" or bef == ".p": #指定されたURLの曲を流す。
         idx = msg.find(" ")
         if msg[idx +1:] == "https://": #youtubeのURLかを判別。
-            youtube_url = aft
+            youtube_url = afneme
             if youtube_url[24:32] == "playlist": #プレイリストか判別
               temp = []
               playlist = pafy.get_playlist2(youtube_url)
@@ -375,7 +393,7 @@ async def on_message(message): #メッセージの確認
 
               ytl(queue_dict)
               async with message.channel.typing():
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.5)
                 await message.channel.send("playlistを追加しました。")
 
             else: #曲のURLがそのままのとき
@@ -392,7 +410,7 @@ async def on_message(message): #メッセージの確認
 
                 enqueue(voice,youtube_url)
                 async with message.channel.typing():
-                 await asyncio.sleep(2)
+                 await asyncio.sleep(0.5)
                 await message.channel.send("正常に追加されました。")
 
         else:
@@ -401,7 +419,7 @@ async def on_message(message): #メッセージの確認
           if message.author.voice is None:
             await message.channel.send("ボイスチャットに参加してください.")
             return
-          sss = aft
+          sss = afneme
           youtudeop()
          #youtube_url = f"https://www.youtube.com/watch?v={videde}"
           if voice == None:
