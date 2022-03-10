@@ -21,7 +21,7 @@ from collections import defaultdict, deque
 DEVELOPER_KEY = "AIzaSyCJPpfRppOf1G16xfUbnt8Uug-SxeORpyM"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-TOKEN = "NDM5NjcxMTAyMDYzNzcxNjQ5.WuQRnw.hLr2Fyw6948L4H7qbqhvVgUn8dY" #TOKENを入力
+TOKEN = "NDM5NjcxMTAyMDYzNzcxNjQ5.WuQRnw.47a1mmbQ2ncxaWpiJ0Vjq2CSX08" #TOKENを入力
 
 FFMPEG_OPTIONS= {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5','options': '-vn'}
 #様々な変数の初期値
