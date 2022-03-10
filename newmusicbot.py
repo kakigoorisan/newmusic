@@ -47,7 +47,7 @@ queue_title = 0
 loopskip = 0
 queue = queue_dict
 
-pafy.set_api_key("Your google TOKEN here")
+pafy.set_api_key("AIzaSyA922hyadZ2CHu7TQLw2S-lK3fpQ3IwlmY")
 
 #キューの設定
 def enqueue(voice_client, youtube_ur):
@@ -169,10 +169,14 @@ async def on_message(message): #メッセージの確認
     global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,tit,elect,meme,print_title,queue_title,count_music,loopskip,videid
     meme = message
     msg = message.content 
+    aft = ""
     bef = msg[:msg.find(" ")]
     afneme = msg[msg.find(" "):]
-    aft = afneme.split(" ")
+    aft_temp = afneme.split(" ")
+    if len(aft_temp) >= 2:
+      aft = aft_temp[1]
     if msg[0] == ".":
+
       print(msg)
       print(bef)
       print(aft)
@@ -238,14 +242,14 @@ async def on_message(message): #メッセージの確認
       name = [m.name for m in message.author.voice.channel.members]
       await message.channel.send(name)
     
-    if msg[:13] == "!announcement" :
+    if msg == "!announcement" :
       await client.change_presence(activity=discord.Game(name=msg[14:], type=1))
 
     if msg == ".info": #botの情報
       await message.channel.send("This bot made by kakigoori(2021) \n\n You can listen to music to use this bot. \n\n This bot is happened to occur an error or to slow down download.")
 
     if msg == ".help": #botのコマンド
-      await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n```")
+      await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loopinfo :loopの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n```")
     
     if msg == ".dc": #切断
       qloo = 0
@@ -264,7 +268,7 @@ async def on_message(message): #メッセージの確認
         await message.channel.send("good bye!")
         ended = 0
 
-    #if msg == ".q_title": #キューの表示時にタイトルのみ表示させたいけど、なかなか厳しいものがある
+    #if bef == ".q_title": #キューの表示時にタイトルのみ表示させたいけど、なかなか厳しいものがある
      # if queue_title == 0:
       #  queue_title = 1
       #  await message.channel.send("キューの表示時にタイトルのみ表示します。")
@@ -291,7 +295,7 @@ async def on_message(message): #メッセージの確認
     if msg == ".skip" or msg == ".s": #流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
       voice.stop()
 
-    if msg== ".loop" or msg == ".lp": #一曲のみのloopをon,offする
+    if msg == ".loop" or msg == ".lp": #一曲のみのloopをon,offする
       if loop == 0:
         loop = 1
         await message.channel.send("loopがonになりました")
@@ -318,15 +322,15 @@ async def on_message(message): #メッセージの確認
       elif loop == 0:
         await message.channel.send("loop : \N{Cross Mark}")
 
-    if bef == ".skipto" or bef == ".skt":
-      if aft[1].isdecimal() == False:
+    if msg == ".skipto" or msg == ".skt":
+      if aft.isdecimal() == False:
         return
-      elif int(aft[1]) > len(queue_dict):
+      elif int(aft) > len(queue_dict):
         await message.channel.send("範囲外です")
         return
       else:
-        num = int(aft[1]) -1
-        poping = int(aft[1])
+        num = int(aft) -1
+        poping = int(aft)
         queue_dict.insert(1,queue_dict[num])
         del queue_dict[poping]
         voice.stop()
@@ -366,8 +370,8 @@ async def on_message(message): #メッセージの確認
       
     if bef == ".play" or bef == ".p": #指定されたURLの曲を流す。
         idx = msg.find(" ")
-        if msg[idx +1:] == "https://": #youtubeのURLかを判別。
-            youtube_url = afneme
+        if aft[:8] == "https://": #youtubeのURLかを判別。
+            youtube_url = aft
             if youtube_url[24:32] == "playlist": #プレイリストか判別
               temp = []
               playlist = pafy.get_playlist2(youtube_url)
