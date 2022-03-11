@@ -359,6 +359,8 @@ async def on_message(message): #メッセージの確認
     if bef == ".skipto" or bef == ".skt": #指定した曲を再生する
       if aft.isdecimal() == False:
         return
+      elif aft == "1":
+        await message.channel.send("現在再生している曲です")
       elif int(aft) > len(queue_dict):
         await message.channel.send("範囲外です") #範囲外か判断する
       else:
@@ -426,10 +428,7 @@ async def on_message(message): #メッセージの確認
         enqueue(voice,q)
         async with message.channel.typing():
           await asyncio.sleep(0.5)
-          if print_title == 0:
-            await message.channel.send("キューに追加: "+titl[0])
-          elif print_title == 1:
-            await message.channel.send("キューに追加: "+q)
+          await message.channel.send("キューに追加: "+q)
 
               
     if bef == ".play" or bef == ".p": #指定されたURLの曲を流す。
