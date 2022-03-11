@@ -23,12 +23,14 @@ YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 TOKEN = "Your TOKEN here." #TOKENを入力
 
+pafy.set_api_key("Your google TOKEN here")
+
 FFMPEG_OPTIONS= {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5','options': '-vn'}
 #様々な変数の初期値
 client = discord.Client(loop=None,heartbeat_timeout=180)
 count_music = 1
 elect = 0
-tit = []
+titl = []
 youtube_url = ""
 voice = None
 playerr = None
@@ -47,7 +49,7 @@ queue_title = 0
 loopskip = 0
 queue = queue_dict
 
-pafy.set_api_key("Your google TOKEN here")
+
 
 #キューの設定
 def enqueue(voice_client, youtube_ur):
@@ -64,7 +66,7 @@ def enqueue(voice_client, youtube_ur):
 
 #googleのapiを使ってyoutubeの動画を検索する
 def youtube_search(options):
-  global videde,tit
+  global videde,titl
   youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
     developerKey=DEVELOPER_KEY)
 
@@ -81,7 +83,7 @@ def youtube_search(options):
   for search_result in search_response.get("items", []):
     if search_result["id"]["kind"] == "youtube#video":
       videde.append(search_result["id"]["videoId"])
-      tit.append(search_result["snippet"]["title"])
+      titl.append(search_result["snippet"]["title"])
       videos.append("%s (%s)" % (search_result["snippet"]["title"],
                                  search_result["id"]["videoId"]))
     else:
@@ -166,7 +168,7 @@ async def on_ready():
 @client.event
 async def on_message(message): #メッセージの確認
     
-    global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,tit,elect,meme,print_title,queue_title,count_music,loopskip,videid
+    global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid
     meme = message
     msg = message.content 
     aft = ""
@@ -197,11 +199,11 @@ async def on_message(message): #メッセージの確認
         async with message.channel.typing():
           await asyncio.sleep(0.5)
           if print_title == 0:
-            await message.channel.send("キューに追加: "+tit[inmsg-1])
+            await message.channel.send("キューに追加: "+titl[inmsg-1])
           elif print_title == 1:
             await message.channel.send("キューに追加: "+q)
       videde = []
-      tit = []
+      titl = []
       elect = 0
 
     if msg == ".move": #vcを移動する
@@ -336,7 +338,7 @@ async def on_message(message): #メッセージの確認
         voice.stop()
       
     if bef == ".sc" or bef == ".search": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
-      tit = []
+      titl = []
       videde = []
       if message.author.voice is None:
         await message.channel.send("ボイスチャットに参加してください.")
@@ -358,10 +360,10 @@ async def on_message(message): #メッセージの確認
               if count_music == len(videde) + 1:
                 break
       elif print_title == 1:
-            for spt in tit:
+            for spt in titl:
               await message.channel.send(str(count_music)+": "+spt)
               count_music = count_music + 1
-              if count_music == len(tit) + 1:
+              if count_music == len(titl) + 1:
                 break
       await message.channel.send("流したい曲の番号を送信してください(.無し)")
       elect = 1
@@ -419,7 +421,7 @@ async def on_message(message): #メッセージの確認
 
         else:
           videde =[]
-          tit = []
+          titl = []
           if message.author.voice is None:
             await message.channel.send("ボイスチャットに参加してください.")
             return
@@ -440,10 +442,10 @@ async def on_message(message): #メッセージの確認
               if count_music == len(videde) + 1:
                 break
           elif print_title == 1:
-            for spt in tit:
+            for spt in titl:
               await message.channel.send(str(count_music)+": "+spt)
               count_music = count_music + 1
-              if count_music == len(tit) + 1:
+              if count_music == len(titl) + 1:
                 break
           await message.channel.send("流したい曲の番号を送信してください(.無し)")  
           elect = 1
