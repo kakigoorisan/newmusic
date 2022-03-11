@@ -161,7 +161,7 @@ def ende(queu):
 async def on_ready():
     print("hi")
     await client.change_presence(activity=discord.Game(name="hi", type=1))
-    await client.change_presence(activity=discord.Game(name="This bot is currently under maintenance...", type=1))
+    await client.change_presence(activity=discord.Game(name="I'm listening to music!!", type=1))
 
 @client.event
 async def on_message(message): #メッセージの確認
