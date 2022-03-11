@@ -47,7 +47,7 @@ queue_title = 0
 loopskip = 0
 queue = queue_dict
 
-pafy.set_api_key("AIzaSyA922hyadZ2CHu7TQLw2S-lK3fpQ3IwlmY")
+pafy.set_api_key("Your google TOKEN here")
 
 #キューの設定
 def enqueue(voice_client, youtube_ur):
@@ -97,7 +97,7 @@ def youtube_search(options):
   print (videde)
 
 #youtubeで検索するための設定。.scで来たワードを入れる
-def youtudeop():
+def youtubeop():
   global videde
   # 検索ワード
   argparser = argparse.ArgumentParser()
@@ -342,7 +342,7 @@ async def on_message(message): #メッセージの確認
         await message.channel.send("ボイスチャットに参加してください.")
         return
       sss = afneme
-      youtudeop()
+      youtubeop()
       #youtube_url = f"https://www.youtube.com/watch?v={videde}"
       if voice == None:
         voice = await message.author.voice.channel.connect(recconect = True)
@@ -424,7 +424,7 @@ async def on_message(message): #メッセージの確認
             await message.channel.send("ボイスチャットに参加してください.")
             return
           sss = afneme
-          youtudeop()
+          youtubeop()
          #youtube_url = f"https://www.youtube.com/watch?v={videde}"
           if voice == None:
             voice = await message.author.voice.channel.connect(reconnect = True)
