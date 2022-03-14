@@ -100,7 +100,6 @@ def youtube_search(options):
 
 #youtubeで検索するための設定。.scで来たワードを入れる
 def youtubeop(num):
-  global videde
   # 検索ワード
   argparser = argparse.ArgumentParser()
   argparser.add_argument("--q")
@@ -111,7 +110,6 @@ def youtubeop(num):
   
   try:
     youtube_search(args)
-    print(videde)
 
     
   
@@ -237,7 +235,7 @@ async def on_message(message): #メッセージの確認
     if msg == ".move": #vcを移動する
       await voice.move_to(message.author.voice.channel)
     
-    if msg == ".clear": #キューをクリア
+    if msg == ".clear" or msg == ".c": #キューをクリア
       async with message.channel.typing():
         await asyncio.sleep(1)
         await message.channel.send("キューをリセットしました.")
@@ -369,7 +367,25 @@ async def on_message(message): #メッセージの確認
         queue_dict.insert(1,queue_dict[num])
         del queue_dict[poping]
         voice.stop()
-      
+    if msg == ".recommend" or msg == ".rec":
+      chanid = client.get_channel(message.channel.id)
+      if voice == None:
+        voice = await message.author.voice.channel.connect(reconnect = True)
+
+      elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
+          await voice.move_to(message.author.voice.channel)  
+      nn = os.path.dirname(os.path.abspath(__file__))
+      f = open(f'{nn}/recommend.txt', "r")
+      lis = f.readlines()
+      if len(lis) >= 1:
+        for line in lis:
+          line = line.rstrip()  # 読み込んだ行の末尾には改行文字があるので削除
+          if line[:5] == "https":
+            enqueue(voice,line)
+        await message.channel.send("ADMINのおすすめの曲を再生します。(詳細は.qコマンドを使用(ログが流れます))")
+      else:
+        await message.channel.send("ADMINのおすすめの曲は現在ありません。")
+
     if bef == ".sc" or bef == ".search": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
       chanid = client.get_channel(message.channel.id)
       titl = []
@@ -381,7 +397,7 @@ async def on_message(message): #メッセージの確認
       youtubeop(5)
       #youtube_url = f"https://www.youtube.com/watch?v={videde}"
       if voice == None:
-        voice = await message.author.voice.channel.connect(recconect = True)
+        voice = await message.author.voice.channel.connect(reconnect = True)
       elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
 
           await voice.move_to(message.author.voice.channel)
