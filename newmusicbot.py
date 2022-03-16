@@ -287,7 +287,7 @@ async def on_message(message): #メッセージの確認
       await message.channel.send("This bot made by kakigoori(2021) \n\n You can listen to music to use this bot. \n\n This bot is happened to occur an error or to slow down download.")
 
     if msg == ".help": #botのコマンド
-      await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loopinfo :loopの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n```")
+      await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loopinfo :loopの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.loopinfo :loopの状況のみを返します\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.adw [言葉] :検索ワードリストに言葉を登録します\n```")
     
     if msg == ".dc": #切断
       qloo = 0
@@ -436,7 +436,7 @@ async def on_message(message): #メッセージの確認
         enqueue(voice,q)
       f.close()
 
-    if bef == ".add_word" or bef == ".adw":
+    if bef == ".add_word" or bef == ".adw": #検索ワードリストに言葉を追加
       nn = os.path.dirname(os.path.abspath(__file__))
       f = open(f'{nn}/words.txt', "a",encoding="utf-8")
       f.write(f'{aft}\n')
