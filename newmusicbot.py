@@ -155,6 +155,16 @@ def ende(queu):
   else:
     return
 
+def random_choice(num,len_word):
+  print(num)
+  ranran =[]
+  for i in range(num):
+    ran = random.randint(0,len_word-1)
+    print("random:"+str(ran))
+    ranran.append(ran)
+  print(ranran)
+  return ranran
+  
 
 #ここからdiscord
 @client.event #起動が完了するとコンソールにhiと送り、プレイ中の表示をさせる
@@ -367,7 +377,78 @@ async def on_message(message): #メッセージの確認
         queue_dict.insert(1,queue_dict[num])
         del queue_dict[poping]
         voice.stop()
-    if msg == ".recommend" or msg == ".rec":
+
+    if msg == ".random_reccomend" or msg == ".racom": #おすすめリストからランダムに1つURLを持ってくる
+      chanid = client.get_channel(message.channel.id)
+      nn = os.path.dirname(os.path.abspath(__file__))
+      f = open(f'{nn}/recommend.txt', "r")
+      url_list = f.readlines()
+      len_url = len(url_list)
+      if len_url < 0:
+        await message.channel.send("おすすめリストがありません")
+      elif len_url >= 1:
+        if voice == None:
+          voice = await message.author.voice.channel.connect(reconnect = True)
+        elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
+          await voice.move_to(message.author.voice.channel)
+        figure = random_choice(1,len_url)
+        q = url_list[figure[0]]
+        enqueue(voice,q)
+        async with message.channel.typing():
+          await asyncio.sleep(0.5)
+          await message.channel.send("キューに追加: "+q)
+      f.close()
+
+
+    if bef == ".randomplay" or bef == ".rap": #検索ワードリストから指定した数言葉を持ってくる
+      chanid = client.get_channel(message.channel.id)
+      if aft.isdecimal() == False: #指定した数が数字じゃないときは反応しない
+        return
+      nn = os.path.dirname(os.path.abspath(__file__))
+      f = open(f'{nn}/words.txt', "r",encoding="utf-8")
+      word_list = []
+      for i in f:
+        line = i.rstrip() #読み込んだ文字に改行文字が含まれているため改行文字を削除
+        word_list.append(line)
+      print(word_list)
+      len_word = len(word_list)
+      if len_word < int(aft):
+        await message.channel.send("指定した数の検索ワードがありません")
+      elif len_word >= int(aft):
+        videde = []
+        words = []
+        figure = random_choice(int(aft),len_word)       
+        for i in range(int(aft)):
+          words.append(word_list[figure[i]])
+        sss = (' '.join(words))
+        youtubeop(1)
+        if voice == None:
+          voice = await message.author.voice.channel.connect(reconnect = True)
+        elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
+          await voice.move_to(message.author.voice.channel)
+        
+        videid = videde[0]
+        q = f"https://www.youtube.com/watch?v={videid}"
+        
+        async with message.channel.typing():
+          await asyncio.sleep(0.5)
+          await message.channel.send("キューに追加: "+q)
+        enqueue(voice,q)
+      f.close()
+
+    if bef == ".add_word" or bef == ".adw":
+      nn = os.path.dirname(os.path.abspath(__file__))
+      f = open(f'{nn}/words.txt', "a",encoding="utf-8")
+      f.write(f'{aft}\n')
+      f.close()
+      f = open(f'{nn}/words.txt', "r",encoding="utf-8") 
+      lis = f.readlines()
+      print(lis)
+      f.close()
+
+
+
+    if msg == ".recommend" or msg == ".rec": #おすすめリストを全てキューに入れる
       chanid = client.get_channel(message.channel.id)
       if voice == None:
         voice = await message.author.voice.channel.connect(reconnect = True)
@@ -379,12 +460,13 @@ async def on_message(message): #メッセージの確認
       lis = f.readlines()
       if len(lis) >= 1:
         for line in lis:
-          line = line.rstrip()  # 読み込んだ行の末尾には改行文字があるので削除
+          line = line.rstrip()  # 読み込んだ行の末尾には改行文字があるので改行文字を削除
           if line[:5] == "https":
             enqueue(voice,line)
         await message.channel.send("ADMINのおすすめの曲を再生します。(詳細は.qコマンドを使用(ログが流れます))")
       else:
         await message.channel.send("ADMINのおすすめの曲は現在ありません。")
+      f.close()
 
     if bef == ".sc" or bef == ".search": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
       chanid = client.get_channel(message.channel.id)
@@ -441,10 +523,10 @@ async def on_message(message): #メッセージの確認
         
         videid = videde[0]
         q = f"https://www.youtube.com/watch?v={videid}"
-        enqueue(voice,q)
         async with message.channel.typing():
           await asyncio.sleep(0.5)
           await message.channel.send("キューに追加: "+q)
+        enqueue(voice,q)
 
               
     if bef == ".play" or bef == ".p": #指定されたURLの曲を流す。
