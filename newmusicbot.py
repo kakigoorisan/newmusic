@@ -213,7 +213,7 @@ async def on_message(message): #メッセージの確認
     aft_temp = afneme.split(" ")
     if len(aft_temp) >= 2:
       aft = aft_temp[1]
-    if msg[0] == ".":
+    if msg[:1] == ".":
 
       print(msg)
       print(bef)
