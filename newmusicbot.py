@@ -264,6 +264,7 @@ async def on_message(message): #メッセージの確認
 
     if msg == ".move": #vcを移動する
       await voice.move_to(message.author.voice.channel)
+      vcid = message.author.voice.channel.id
     
     if msg == ".clear" or msg == ".c": #キューをクリア
       async with message.channel.typing():
