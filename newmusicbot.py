@@ -195,7 +195,7 @@ async def on_ready():
 
 @client.event
 async def on_voice_state_update(member, before, after):
-  global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid
+  global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid,vcid
   
   if voice != None and before.channel != None:
     if before.channel.id == vcid:
@@ -447,8 +447,10 @@ async def on_message(message): #メッセージの確認
         youtubeop(1)
         if voice == None:
           voice = await message.author.voice.channel.connect(reconnect = True)
+          vcid = message.author.voice.channel.id
         elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
           await voice.move_to(message.author.voice.channel)
+          vcid = message.author.voice.channel.id
         
         videid = videde[0]
         q = f"https://www.youtube.com/watch?v={videid}"
@@ -479,6 +481,7 @@ async def on_message(message): #メッセージの確認
 
       elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
           await voice.move_to(message.author.voice.channel)  
+          vcid = message.author.voice.channel.id
       nn = os.path.dirname(os.path.abspath(__file__))
       f = open(f'{nn}/recommend.txt', "r")
       lis = f.readlines()
@@ -507,9 +510,10 @@ async def on_message(message): #メッセージの確認
       #youtube_url = f"https://www.youtube.com/watch?v={videde}"
       if voice == None:
         voice = await message.author.voice.channel.connect(reconnect = True)
+        vcid = message.author.voice.channel.id
       elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
-
           await voice.move_to(message.author.voice.channel)
+          vcid = message.author.voice.channel.id
 
       count_music = 1
       if print_title == 0:
@@ -547,9 +551,10 @@ async def on_message(message): #メッセージの確認
         #youtube_url = f"https://www.youtube.com/watch?v={videde}"
         if voice == None:
           voice = await message.author.voice.channel.connect(reconnect = True)
+          vcid = message.author.voice.channel.id
         elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
-
           await voice.move_to(message.author.voice.channel)
+          vcid = message.author.voice.channel.id
         
         videid = videde[0]
         q = f"https://www.youtube.com/watch?v={videid}"
@@ -582,10 +587,11 @@ async def on_message(message): #メッセージの確認
 
               if voice == None:
                 voice = await message.author.voice.channel.connect(reconnect = True)
-            
+                vcid = message.author.voice.channel.id
 
               elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id:            
                 await voice.move_to(message.author.voice.channel)
+                vcid = message.author.voice.channel.id
 
               ytl(queue_dict)
               async with message.channel.typing():
@@ -599,10 +605,11 @@ async def on_message(message): #メッセージの確認
 
                 if voice == None:
                   voice = await message.author.voice.channel.connect(reconnect = True)
-            
+                  vcid = message.author.voice.channel.id
 
                 elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id:            
                   await voice.move_to(message.author.voice.channel)
+                  vcid = message.author.voice.channel.id
 
                 enqueue(voice,youtube_url)
                 async with message.channel.typing():
@@ -623,9 +630,10 @@ async def on_message(message): #メッセージの確認
          #youtube_url = f"https://www.youtube.com/watch?v={videde}"
           if voice == None:
             voice = await message.author.voice.channel.connect(reconnect = True)
+            vcid = message.author.voice.channel.id
           elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
-
             await voice.move_to(message.author.voice.channel)
+            vcid = message.author.voice.channel.id
 
           count_music = 1
           if print_title == 0: #候補を5個並べる。選択の部分はまた別な場所(上の方にある)
