@@ -21,12 +21,22 @@ from google.auth.transport.requests import _Response, Request
 
 from collections import defaultdict, deque
 
-DEVELOPER_KEY = "Your google api TOKEN here."
+nn = os.path.dirname(os.path.abspath(__file__))
+with open(f"{nn}/TOKEN.txt", "r",encoding="utf-8") as temp_file: #TOKEN.txtからTOKEN等を取得
+  temp_TOKEN_n = temp_file.readlines()
+  temp_TOKEN = [line.strip() for line in temp_TOKEN_n]
+
+  TOKEN_list = [line for line in temp_TOKEN if line.startswith("TOKEN =")]
+  DEVELOPER_KEY_list = [line for line in temp_TOKEN if line.startswith("Youtube_API_KEY =")]
+  
+  TOKEN = str(TOKEN_list[0].lstrip("TOKEN"))
+  TOKEN = TOKEN.lstrip(" =")
+
+  DEVELOPER_KEY = str(DEVELOPER_KEY_list[0].lstrip("Youtube_API_KEY"))
+  DEVELOPER_KEY = DEVELOPER_KEY.lstrip(" =")
+
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-TOKEN = "Your TOKEN here." #TOKENを入力
-
-pafy.set_api_key("Your google TOKEN here")
 
 FFMPEG_OPTIONS= {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5','options': '-vn'}
 
@@ -55,8 +65,10 @@ loopskip = 0
 queue = queue_dict
 chanid = ""
 vcid = ""
+you = True
 
-
+if DEVELOPER_KEY == "no":
+  you = False
 
 #キューの設定
 def enqueue(voice_client, youtube_ur):
@@ -174,9 +186,12 @@ def random_choice(num,len_word):
 #ここからdiscord
 @client.event #起動が完了するとコンソールにhiと送り、プレイ中の表示をさせる
 async def on_ready():
-    print("hi")
-    await client.change_presence(activity=discord.Game(name="hi", type=1))
-    await client.change_presence(activity=discord.Game(name="I'm listening to music!!", type=1))
+  global you
+  print("hi")
+  await client.change_presence(activity=discord.Game(name="hi", type=1))
+  await client.change_presence(activity=discord.Game(name="I'm listening to music!!", type=1))
+  if you == False:
+    print("制限モードがonになっています。解除するにはTOKEN.txtのYoutube_API_KEYにYoutube v3 APIのkeyを入力してください。")
 
 @client.event
 async def on_voice_state_update(member, before, after):
@@ -209,7 +224,7 @@ async def on_voice_state_update(member, before, after):
 @client.event
 async def on_message(message): #メッセージの確認
     
-    global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid,vcid
+    global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid,vcid,you
     meme = message
     msg = message.content 
     aft = ""
@@ -406,6 +421,9 @@ async def on_message(message): #メッセージの確認
 
 
     if bef == ".randomplay" or bef == ".rap": #検索ワードリストから指定した数言葉を持ってくる
+      if you ==False:
+        await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
+        return
       chanid = client.get_channel(message.channel.id)
       if aft.isdecimal() == False: #指定した数が数字じゃないときは反応しない
         return
@@ -475,6 +493,9 @@ async def on_message(message): #メッセージの確認
       f.close()
 
     if bef == ".sc" or bef == ".search": #検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
+      if you ==False:
+        await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
+        return
       chanid = client.get_channel(message.channel.id)
       titl = []
       videde = []
@@ -509,6 +530,9 @@ async def on_message(message): #メッセージの確認
 
 
     if bef == ".play_one_search" or bef == ".pos": #1曲のみ検索する 動作速度を優先した感じ
+      if you ==False:
+        await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
+        return
       chanid = client.get_channel(message.channel.id)
       if aft[:8] == "https://":
         await message.channel.send("URLではこの機能は使えません")
@@ -586,6 +610,9 @@ async def on_message(message): #メッセージの確認
                 await message.channel.send("正常に追加されました。")
 
         else: #URLじゃなかったんだね...
+          if you ==False:
+            await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
+            return
           videde =[]
           titl = []
           if message.author.voice is None:

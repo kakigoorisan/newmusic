@@ -1,0 +1,7 @@
+
+>>discordのTOKENを貼り付けてください
+TOKEN =Your_TOKEN_here
+
+>>Youtubeのapikeyを貼り付けてください(検索機能を使わない場合はno)
+Youtube_API_KEY =Your_APIkey_here
+
