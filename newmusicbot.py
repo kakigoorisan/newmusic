@@ -9,6 +9,9 @@ from discord import player
 from discord.errors import ClientException
 import os
 import asyncio
+import random
+
+#import slash_seat
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -28,7 +31,8 @@ pafy.set_api_key("Your google TOKEN here")
 FFMPEG_OPTIONS= {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5','options': '-vn'}
 
 #様々な変数の初期値
-client = discord.Client(loop=None,heartbeat_timeout=180)
+intents = discord.Intents.all()
+client = discord.Client(loop=None,heartbeat_timeout=180,intents=intents)
 count_music = 1
 elect = 0
 titl = []
@@ -50,6 +54,7 @@ queue_title = 0
 loopskip = 0
 queue = queue_dict
 chanid = ""
+vcid = ""
 
 
 
@@ -177,34 +182,34 @@ async def on_ready():
 async def on_voice_state_update(member, before, after):
   global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid
   
-  print("a")
-  if voice != None:
-    name = voice.channel.members
-    if len(name) == 1:
-      print(name)
-      qloo = 0
-      loop = 0
-      queue_dict.clear()
-      if voice.is_playing():
-        voice.stop()
+  if voice != None and before.channel != None:
+    if before.channel.id == vcid:
+      name = voice.channel.members
+      if len(name) == 1:
+        print(name)
+        qloo = 0
+        loop = 0
+        queue_dict.clear()
+        if voice.is_playing():
+          voice.stop()
 
-      #guild = message.guild.voice_client
-      await voice.disconnect()
-      voice = None
-      async with chanid.typing():
-        await asyncio.sleep(0.5)
-        await chanid.send("good bye!")
+        #guild = message.guild.voice_client
+        await voice.disconnect()
+        voice = None
+        async with chanid.typing():
+          await asyncio.sleep(0.5)
+          await chanid.send("good bye!")
+      else:
+        return
     else:
       return
-  else:
-    return
 
 
 
 @client.event
 async def on_message(message): #メッセージの確認
     
-    global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid
+    global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,loop,titl,elect,meme,print_title,queue_title,count_music,loopskip,videid,chanid,vcid
     meme = message
     msg = message.content 
     aft = ""
@@ -452,6 +457,7 @@ async def on_message(message): #メッセージの確認
       chanid = client.get_channel(message.channel.id)
       if voice == None:
         voice = await message.author.voice.channel.connect(reconnect = True)
+        vcid = message.author.voice.channel.id
 
       elif message.author.voice is not None and message.guild.me not in message.author.voice.channel.members and message.guild.id == voice.guild.id: #サーバーと、ボイスチャンネルを判別
           await voice.move_to(message.author.voice.channel)  
