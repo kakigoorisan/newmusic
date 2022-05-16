@@ -307,7 +307,7 @@ bot.remove_command('help')
 async def help(message):#botのコマンド
     global chanid,guildid
     guildid = message.guild.id
-    await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queuelooping :キューをループさせます。\n.looping :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loopinginfo :loopingの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.loopinginfo :loopingの状況のみを返します\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.adw [言葉] :検索ワードリストに言葉を登録します\n```")
+    await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loop :loopの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.adw [言葉] :検索ワードリストに言葉を登録します\n```")
 
 
 @bot.command()
@@ -349,9 +349,9 @@ async def queue(message):#キューの中身を表示させる。デザインを
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo == 1:
-        await chanid[guildid].send("queuelooping: \N{Heavy Large Circle}")
+        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
     elif qloo == 0:
-        await chanid[guildid].send("queuelooping: \N{Cross Mark}")
+        await chanid[guildid].send("queueloop: \N{Cross Mark}")
     if looping == 1:
         await chanid[guildid].send("looping: \N{Heavy Large Circle}")
     if looping == 0:
@@ -367,9 +367,9 @@ async def q(message):
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo == 1:
-        await chanid[guildid].send("queuelooping: \N{Heavy Large Circle}")
+        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
     elif qloo == 0:
-        await chanid[guildid].send("queuelooping: \N{Cross Mark}")
+        await chanid[guildid].send("queueloop: \N{Cross Mark}")
     if looping == 1:
         await chanid[guildid].send("looping: \N{Heavy Large Circle}")
     if looping == 0:
@@ -441,13 +441,13 @@ async def lpinfo(message):#loopingの状態を確認
     global qloo,looping,guildid,chanid
     guildid = message.guild.id
     if qloo[guildid] == 1:
-        await chanid[guildid].send("queuelooping: \N{Heavy Large Circle}")
+        await chanid[guildid].send("queueloop : \N{Heavy Large Circle}")
     elif qloo[guildid] == 0:
-        await chanid[guildid].send("queuelooping: \N{Cross Mark}")
+        await chanid[guildid].send("queueloop : \N{Cross Mark}")
     if looping[guildid] == 1:
-        await chanid[guildid].send("looping: \N{Heavy Large Circle}")
+        await chanid[guildid].send("loop : \N{Heavy Large Circle}")
     elif looping[guildid] == 0:
-        await chanid[guildid].send("looping : \N{Cross Mark}")
+        await chanid[guildid].send("loop : \N{Cross Mark}")
 
 
 @bot.command()
