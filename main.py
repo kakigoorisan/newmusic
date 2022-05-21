@@ -161,9 +161,10 @@ async def on_voice_state_update(member, before, after):
     print("抜けた")
     befoguild = {}
     guildid = before.channel.guild.id
+    voice.setdefault(guildid,None)
     befoguild[guildid] = before.channel.id
     if voice != None and before.channel != None:
-      if befoguild[guildid] == vcid[guildid]:
+      if befoguild[guildid] == vcid[guildid] and voice[guildid] != None:
         name = voice[guildid].channel.members
         if len(name) == 1:
           print(name)
@@ -347,8 +348,12 @@ async def queue(message):#キューの中身を表示させる。デザインを
     global queue_dict,qloo,looping,chanid,guildid
     guildid = message.guild.id
      # if queue_title == 0:
+    queues = queue_dict[guildid]
     count_music = 1
-    for spt in queue_dict[guildid]:
+    if len(queues) == 0:
+      await chanid[guildid].send("キューの中身は空です")
+    elif len(queues) > 0:
+      for spt in queues:
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo[guildid] == 1:
@@ -365,8 +370,12 @@ async def q(message):
     global queue_dict,qloo,looping,chanid,guildid
     guildid = message.guild.id
      # if queue_title == 0:
+    queues = queue_dict[guildid]
     count_music = 1
-    for spt in queue_dict[guildid]:
+    if len(queues) == 0:
+      await chanid[guildid].send("キューの中身は空です")
+    elif len(queues) > 0:
+      for spt in queues:
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo[guildid] == 1:
