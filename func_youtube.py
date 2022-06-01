@@ -3,16 +3,16 @@ from multiprocessing.connection import answer_challenge
 from operator import truediv
 from turtle import clear, title
 import argparse
-
+import asyncio
 import os
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from oauth2client.tools import argparser
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import _Response, Request
-videde =[]
-titl=[]
-
+videde ={}
+titl={}
+ser = {}
 #Tokenを取得
 nn = os.path.dirname(os.path.abspath(__file__))
 with open(f"{nn}/TOKEN.txt", "r",encoding="utf-8") as temp_file:
@@ -32,10 +32,10 @@ YOUTUBE_API_VERSION = "v3"
 
 
 #googleのapiを使ってyoutubeの動画を検索する
-def youtube_search(options):
-  global videde,titl
-  videde = []
-  titl = []
+async def youtube_search(options,guildid):
+  global videde,titl,ser
+  videde.setdefault(guildid,[])
+  titl.setdefault(guildid,[])
   youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
     developerKey=DEVELOPER_KEY)
 
@@ -51,8 +51,8 @@ def youtube_search(options):
   
   for search_result in search_response.get("items", []):
     if search_result["id"]["kind"] == "youtube#video":
-      videde.append(search_result["id"]["videoId"])
-      titl.append(search_result["snippet"]["title"])
+      videde[guildid].append(search_result["id"]["videoId"])
+      titl[guildid].append(search_result["snippet"]["title"])
     else:
       return
 
@@ -63,11 +63,12 @@ def youtube_search(options):
  
   
   #vcで流すためにvideoIDを取得
-  print (videde)
-  return (videde,titl)
+  print (videde[guildid])
+  return (videde,titl,guildid)
 
 #youtubeで検索するための設定。.scで来たワードを入れる
-def youtubeop(num,sss):
+async def youtubeop(num,sss,guildid):
+  global ser
   # 検索ワード
   argparser = argparse.ArgumentParser()
   argparser.add_argument("--q")
@@ -77,12 +78,16 @@ def youtubeop(num,sss):
   args.q = sss
   
   try:
-    ser = youtube_search(args)
-    print(ser[0])
-    videde = list(ser[0])
-    titl = list(ser[1])
-    print(titl)
-    return (videde,titl)
+    ser[guildid] = await youtube_search(args,guildid)
+    guildid = ser[guildid][2]
+    print(ser[guildid][0])
+    videde = ser[guildid][0]
+    if len(videde) >= 2:
+      print("len>=2")
+      await asyncio.sleep(0.5)
+    titl = ser[guildid][1]
+    print (f"aaa {videde}")
+    return (videde,titl,guildid)
 
 
 

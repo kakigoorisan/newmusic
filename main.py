@@ -1,10 +1,10 @@
 from calendar import c
 from distutils.log import debug
-from encodings import normalize_encoding
+from itertools import count
 from multiprocessing.connection import answer_challenge
 from operator import truediv
 from shutil import get_unpack_formats
-from turtle import clear
+from turtle import clear, filling
 import pafy
 from discord import FFmpegPCMAudio
 import discord
@@ -20,7 +20,7 @@ from oauth2client.tools import argparser
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import _Response, Request
 
-import func_youtube
+import func_youtube as fy
 
 
 #Tokenを取得
@@ -48,7 +48,6 @@ FFMPEG_OPTIONS= {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnec
 intents = discord.Intents.all()
 count_music = 1
 elect = 0
-titl = []
 youtube_url = ""
 voice = {}
 playerr = None
@@ -58,8 +57,8 @@ looping = {}
 ended = 0
 queue_dict = {}
 t = 0
-videde = []
-titl = [] 
+videde = {}
+titl = {}
 sss = ""
 meme = None
 print_title = {}
@@ -77,7 +76,7 @@ if DEVELOPER_KEY == "no":
   you = False
 
 #キューの設定
-def enqueue(voice_client, youtube_ur):
+async def enqueue(voice_client, youtube_ur):
     global queue_dict,guildid
     guildid = voice_client.guild.id 
 
@@ -129,7 +128,7 @@ def ende(queu,guildid):
   else:
     return
 
-def random_choice(num,len_word):
+async def random_choice(num,len_word):
   print(num)
   ranran =[]
   for i in range(num):
@@ -157,14 +156,14 @@ async def on_ready():
 @bot.event
 async def on_voice_state_update(member, before, after):
   global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,looping,titl,elect,meme,print_title,queue_title,count_music,loopingskip,videid,chanid,vcid
+  print("抜けた")
+
   if before.channel != None and vcid != {}:
-    print("抜けた")
     befoguild = {}
     guildid = before.channel.guild.id
-    voice.setdefault(guildid,None)
     befoguild[guildid] = before.channel.id
     if voice != None and before.channel != None:
-      if befoguild[guildid] == vcid[guildid] and voice[guildid] != None:
+      if befoguild[guildid] == vcid[guildid]:
         name = voice[guildid].channel.members
         if len(name) == 1:
           print(name)
@@ -218,18 +217,20 @@ async def on_message(message): #メッセージの確認
               await chanid[guildid].send("キャンセルしました")
               return
           inmsg = int(msg) #検索した候補を選ぶ
+          print(inmsg)
+          print(count_music)
           if inmsg <= count_music:
-              videid = videde[inmsg-1]
+              videid = videde[guildid][inmsg-1]
               q = f"https://www.youtube.com/watch?v={videid}"
-              enqueue(voice[guildid] ,q)
+              await enqueue(voice[guildid] ,q)
               async with chanid[guildid].typing():
                 await asyncio.sleep(0.5)
                 if print_title[guildid] == 0:
-                  await chanid[guildid].send("キューに追加: "+titl[inmsg-1])
+                  await chanid[guildid].send("キューに追加: "+titl[guildid][inmsg-1])
                 elif print_title[guildid] == 1:
                   await chanid[guildid].send("キューに追加: "+q)
-          videde = []
-          titl = []
+          videde[guildid] = []
+          titl[guildid] = []
           elect = 0
 
 
@@ -252,6 +253,18 @@ async def clear(message):  #キューをクリア
         await asyncio.sleep(1)
         await chanid[guildid].send("キューをリセットしました.")
     queue_dict[guildid] = []
+
+@bot.command()
+async def pause(message):
+  global voice,guildid
+  guildid = message.guild.id
+  if voice[guildid].is_paused() == False:
+    await message.channel.send("曲を一時停止します")
+    voice[guildid].pause()
+  elif voice[guildid].is_paused() == True:
+    await message.channel.send("曲を再生します")
+    voice[guildid].resume()
+
 
 
 
@@ -301,7 +314,7 @@ async def pr_title(message):#検索時にタイトルのみにする
 async def info(message):#botの情報
     global chanid,guildid
     guildid = message.guild.id
-    await chanid[guildid].send("This bot made by kakigoori(2022) \n\n You can listen to music to use this bot. \n\n This bot is happened to occur an error or to slow down download.")
+    await chanid[guildid].send("This bot made by kakigoori(2021) \n\n You can listen to music to use this bot. \n\n This bot is happened to occur an error or to slow down download.")
 
 bot.remove_command('help')
 
@@ -309,7 +322,7 @@ bot.remove_command('help')
 async def help(message):#botのコマンド
     global chanid,guildid
     guildid = message.guild.id
-    await message.channel.send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loop :loopの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.racoms :おすすめの曲リストにある曲をすべてキューに入れます\n.adw [言葉] :検索ワードリストに言葉を登録します\n```")
+    await chanid[guildid].send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.pause :流れている曲を一時停止します。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loopinginfo :loopingの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.loopinginfo :loopingの状況のみを返します\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.adw [言葉] :検索ワードリストに言葉を登録します\n```")
 
 
 @bot.command()
@@ -325,15 +338,33 @@ async def dc(message):
     #guild = message.guild.voice_client
     await voice[guildid].disconnect()
     voice = None
-      
     j = 0
+            #guild = message.guild.voice_client
+    del voice[guildid] 
+    del chanid[guildid]          
     async with chanid[guildid].typing():
         await asyncio.sleep(0.7)
         await chanid[guildid].send("good bye!")
-    del voice[guildid] 
-    del chanid[guildid] 
         
-
+@bot.command()
+async def join(message):
+  global voice,guildid
+  voiceid = message.auther.voice
+  guildid = message.guild.id
+  voice.setdefault(guildid,None)
+  if voice[guildid] == None:
+                            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                            chanid[guildid] = bot.get_channel(message.channel.id)
+                            vcid[guildid] = message.author.voice.channel.id
+                            channelid[guildid] = message.channel.id
+                            print(channelid)
+                            print(channelid[guildid])
+  elif vcid[guildid] != message.author.voice.channel.id:
+                  await voice[guildid].move_to(message.author.voice.channel)
+                  vcid[guildid] = message.author.voice.channel.id
+  elif voiceid == None:
+              await chanid[guildid].send("ボイスチャットに参加してください")
+              return
 
     #if bef == ".q_title": #キューの表示時にタイトルのみ表示させたいけど、なかなか厳しいものがある
      # if queue_title == 0:
@@ -348,12 +379,8 @@ async def queue(message):#キューの中身を表示させる。デザインを
     global queue_dict,qloo,looping,chanid,guildid
     guildid = message.guild.id
      # if queue_title == 0:
-    queues = queue_dict[guildid]
     count_music = 1
-    if len(queues) == 0:
-      await chanid[guildid].send("キューの中身は空です")
-    elif len(queues) > 0:
-      for spt in queues:
+    for spt in queue_dict[guildid]:
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo[guildid] == 1:
@@ -363,29 +390,25 @@ async def queue(message):#キューの中身を表示させる。デザインを
     if looping[guildid] == 1:
         await chanid[guildid].send("loop: \N{Heavy Large Circle}")
     if looping[guildid] == 0:
-        await chanid[guildid].send("loop : \N{Cross Mark}")
+        await chanid[guildid].send("loop: \N{Cross Mark}")
 
 @bot.command()
 async def q(message):
     global queue_dict,qloo,looping,chanid,guildid
     guildid = message.guild.id
      # if queue_title == 0:
-    queues = queue_dict[guildid]
     count_music = 1
-    if len(queues) == 0:
-      await chanid[guildid].send("キューの中身は空です")
-    elif len(queues) > 0:
-      for spt in queues:
+    for spt in queue_dict[guildid]:
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo[guildid] == 1:
-        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
+        await chanid[guildid].send("queuelooing: \N{Heavy Large Circle}")
     elif qloo[guildid] == 0:
         await chanid[guildid].send("queueloop: \N{Cross Mark}")
     if looping[guildid] == 1:
         await chanid[guildid].send("loop: \N{Heavy Large Circle}")
     if looping[guildid] == 0:
-        await chanid[guildid].send("loop : \N{Cross Mark}")
+        await chanid[guildid].send("loop: \N{Cross Mark}")
 
 @bot.command()
 async def skip(message):#流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
@@ -409,10 +432,10 @@ async def loop(message):#一曲のみのloopingをon,offする
     guildid = message.guild.id
     if looping[guildid] == 0:
         looping[guildid] = 1
-        await message.channel.send("loopがonになりました")
+        await message.channel.send("loopingがonになりました")
     elif looping[guildid] == 1:
         looping[guildid] = 0
-        await message.channel.send("loopがoffになりました")
+        await message.channel.send("loopingがoffになりました")
 
 @bot.command()
 async def lp(message):
@@ -420,10 +443,10 @@ async def lp(message):
     guildid = message.guild.id
     if looping[guildid] == 0:
         looping[guildid] = 1
-        await message.channel.send("loopがonになりました")
+        await message.channel.send("loopingがonになりました")
     elif looping[guildid] == 1:
         looping[guildid] = 0
-        await message.channel.send("loopがoffになりました")
+        await message.channel.send("loopingがoffになりました")
 
 
 @bot.command()
@@ -432,10 +455,10 @@ async def queueloop(message):#queueloopingをon,offする。
     guildid = message.guild.id
     if qloo[guildid] == 0:
         qloo[guildid] = 1
-        await message.channel.send("queueloopがonになりました")
+        await message.channel.send("queueloopingがonになりました")
     elif qloo[guildid] == 1:
         qloo[guildid] = 0
-        await message.channel.send("queueloopがoffになりました")
+        await message.channel.send("queueloopingがoffになりました")
 
 @bot.command()
 async def qlp(message):#queueloopingをon,offする。
@@ -443,23 +466,23 @@ async def qlp(message):#queueloopingをon,offする。
     guildid = message.guild.id
     if qloo[guildid] == 0:
         qloo[guildid] = 1
-        await message.channel.send("queueloopがonになりました")
+        await message.channel.send("queueloopingがonになりました")
     elif qloo[guildid] == 1:
         qloo[guildid] = 0
-        await message.channel.send("queueloopがoffになりました")
+        await message.channel.send("queueloopingがoffになりました")
 
 @bot.command()
 async def lpinfo(message):#loopingの状態を確認
     global qloo,looping,guildid,chanid
     guildid = message.guild.id
     if qloo[guildid] == 1:
-        await chanid[guildid].send("queueloop : \N{Heavy Large Circle}")
+        await chanid[guildid].send("queuelooping: \N{Heavy Large Circle}")
     elif qloo[guildid] == 0:
-        await chanid[guildid].send("queueloop : \N{Cross Mark}")
+        await chanid[guildid].send("queuelooping: \N{Cross Mark}")
     if looping[guildid] == 1:
-        await chanid[guildid].send("loop : \N{Heavy Large Circle}")
+        await chanid[guildid].send("looping: \N{Heavy Large Circle}")
     elif looping[guildid] == 0:
-        await chanid[guildid].send("loop : \N{Cross Mark}")
+        await chanid[guildid].send("looping : \N{Cross Mark}")
 
 
 @bot.command()
@@ -505,11 +528,11 @@ async def random_recommend(message): #おすすめリストからランダムに
     print(guildid)
     voiceid = message.author.voice
     global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    chanid = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id)  
+    print_title.setdefault(guildid,0)   
     nn = os.path.dirname(os.path.abspath(__file__))
     f = open(f'{nn}/recommend.txt', "r")
     url_list = f.readlines()
@@ -517,22 +540,22 @@ async def random_recommend(message): #おすすめリストからランダムに
     if len_url < 0:
         await message.channel.send("おすすめリストがありません")
     elif len_url >= 1:
-        if voiceid == None:
-                await chanid[guildid].send("ボイスチャットに参加してください。")
-                return
-        elif voice[guildid] == None:
-                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                chanid[guildid] = bot.get_channel(message.channel.id)
-                vcid[guildid] = message.author.voice.channel.id
-                channelid[guildid] = message.channel.id
-                print(channelid)
-                print(channelid[guildid])
+        if voice[guildid] == None:
+                            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                            chanid[guildid] = bot.get_channel(message.channel.id)
+                            vcid[guildid] = message.author.voice.channel.id
+                            channelid[guildid] = message.channel.id
+                            print(channelid)
+                            print(channelid[guildid])
         elif vcid[guildid] != message.author.voice.channel.id:
-                await voice[guildid].move_to(message.author.voice.channel)
-                vcid[guildid] = message.author.voice.channel.id
-        figure = random_choice(1,len_url)
+                  await voice[guildid].move_to(message.author.voice.channel)
+                  vcid[guildid] = message.author.voice.channel.id
+        elif voiceid == None:
+              await chanid[guildid].send("ボイスチャットに参加してください")
+              return
+        figure = await random_choice(1,len_url)
         q = url_list[figure[0]]
-        enqueue(voice[guildid],q)
+        await enqueue(voice[guildid],q)
         async with message.channel.typing():
           await asyncio.sleep(0.5)
           await message.channel.send("キューに追加: "+q)
@@ -545,11 +568,11 @@ async def racom(message): #おすすめリストからランダムに1つURLを�
     print(guildid)
     voiceid = message.author.voice
     global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    chanid = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id) 
+    print_title.setdefault(guildid,0)   
     nn = os.path.dirname(os.path.abspath(__file__))
     f = open(f'{nn}/recommend.txt', "r")
     url_list = f.readlines()
@@ -557,22 +580,22 @@ async def racom(message): #おすすめリストからランダムに1つURLを�
     if len_url < 0:
         await message.channel.send("おすすめリストがありません")
     elif len_url >= 1:
-        if voiceid == None:
-                await chanid[guildid].send("ボイスチャットに参加してください。")
-                return
-        elif voice[guildid] == None:
-                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                chanid[guildid] = bot.get_channel(message.channel.id)
-                vcid[guildid] = message.author.voice.channel.id
-                channelid[guildid] = message.channel.id
-                print(channelid)
-                print(channelid[guildid])
+        if voice[guildid] == None:
+                            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                            chanid[guildid] = bot.get_channel(message.channel.id)
+                            vcid[guildid] = message.author.voice.channel.id
+                            channelid[guildid] = message.channel.id
+                            print(channelid)
+                            print(channelid[guildid])
         elif vcid[guildid] != message.author.voice.channel.id:
-                await voice[guildid].move_to(message.author.voice.channel)
-                vcid[guildid] = message.author.voice.channel.id
-        figure = random_choice(1,len_url)
+                  await voice[guildid].move_to(message.author.voice.channel)
+                  vcid[guildid] = message.author.voice.channel.id
+        elif voiceid == None:
+              await chanid[guildid].send("ボイスチャットに参加してください")
+              return
+        figure = await random_choice(1,len_url)
         q = url_list[figure[0]]
-        enqueue(voice[guildid],q)
+        await enqueue(voice[guildid],q)
         async with message.channel.typing():
           await asyncio.sleep(0.5)
           await message.channel.send("キューに追加: "+q)
@@ -588,11 +611,11 @@ async def randomplay(message,aft):#検索ワードリストから指定した数
     if you ==False:
         await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
+    chanid = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id)   
+    print_title.setdefault(guildid,0)    
     if aft.isdecimal() == False: #指定した数が数字じゃないときは反応しない
         return
     nn = os.path.dirname(os.path.abspath(__file__))
@@ -606,36 +629,36 @@ async def randomplay(message,aft):#検索ワードリストから指定した数
     if len_word < int(aft):
         await message.channel.send("指定した数の検索ワードがありません")
     elif len_word >= int(aft):
-        videde = []
+        videde[guildid] = []
         words = []
-        figure = random_choice(int(aft),len_word)       
+        figure = await random_choice(int(aft),len_word)       
         for i in range(int(aft)):
           words.append(word_list[figure[i]])
         sss = (' '.join(words))
-        ff =func_youtube.youtubeop(1,sss)
-        videde = list(ff[0])
-        titl = list(ff[1])
-        if voiceid == None:
-                await chanid[guildid].send("ボイスチャットに参加してください。")
-                return
-        elif voice[guildid] == None:
-                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                chanid[guildid] = bot.get_channel(message.channel.id)
-                vcid[guildid] = message.author.voice.channel.id
-                channelid[guildid] = message.channel.id
-                print(channelid)
-                print(channelid[guildid])
+        ff =await fy.youtubeop(1,sss,guildid)
+        videde[guildid] = list(ff[0])
+        titl[guildid] = list(ff[1])
+        if voice[guildid] == None:
+                            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                            chanid[guildid] = bot.get_channel(message.channel.id)
+                            vcid[guildid] = message.author.voice.channel.id
+                            channelid[guildid] = message.channel.id
+                            print(channelid)
+                            print(channelid[guildid])
         elif vcid[guildid] != message.author.voice.channel.id:
-                await voice[guildid].move_to(message.author.voice.channel)
-                vcid[guildid] = message.author.voice.channel.id
+                  await voice[guildid].move_to(message.author.voice.channel)
+                  vcid[guildid] = message.author.voice.channel.id
+        elif voiceid == None:
+              await chanid[guildid].send("ボイスチャットに参加してください")
+              return
         
-        videid = videde[0]
+        videid = videde[guildid][0]
         q = f"https://www.youtube.com/watch?v={videid}"
         
         async with message.channel.typing():
           await asyncio.sleep(0.5)
           await message.channel.send("キューに追加: "+q)
-        enqueue(voice[guildid],q)
+        await enqueue(voice[guildid],q)
     f.close()
 
 @bot.command()
@@ -645,11 +668,11 @@ async def rap(message,aft):#検索ワードリストから指定した数言葉�
     print(guildid)
     voiceid = message.author.voice
     global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id) 
+    print_title.setdefault(guildid,0)   
     if you ==False:
         await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
@@ -666,37 +689,37 @@ async def rap(message,aft):#検索ワードリストから指定した数言葉�
     if len_word < int(aft):
         await message.channel.send("指定した数の検索ワードがありません")
     elif len_word >= int(aft):
-        videde = []
+        videde[guildid] = []
         words = []
-        figure = random_choice(int(aft),len_word)       
+        figure = await random_choice(int(aft),len_word)       
         for i in range(int(aft)):
           words.append(word_list[figure[i]])
         sss = (' '.join(words))
-        ff = func_youtube.youtubeop(1,sss)
-        videde = list(ff[0])
-        titl = list(ff[1])
+        ff = await fy.youtubeop(1,sss,guildid)
+        videde[guildid] = list(ff[0])
+        titl[guildid] = list(ff[1])
 
-        if voiceid == None:
-                await chanid[guildid].send("ボイスチャットに参加してください。")
-                return
-        elif voice[guildid] == None:
-                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                chanid[guildid] = bot.get_channel(message.channel.id)
-                vcid[guildid] = message.author.voice.channel.id
-                channelid[guildid] = message.channel.id
-                print(channelid)
-                print(channelid[guildid])
+        if voice[guildid] == None:
+                            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                            chanid[guildid] = bot.get_channel(message.channel.id)
+                            vcid[guildid] = message.author.voice.channel.id
+                            channelid[guildid] = message.channel.id
+                            print(channelid)
+                            print(channelid[guildid])
         elif vcid[guildid] != message.author.voice.channel.id:
-                await voice[guildid].move_to(message.author.voice.channel)
-                vcid[guildid] = message.author.voice.channel.id
+                  await voice[guildid].move_to(message.author.voice.channel)
+                  vcid[guildid] = message.author.voice.channel.id
+        elif voiceid == None:
+              await chanid[guildid].send("ボイスチャットに参加してください")
+              return
         
-        videid = videde[0]
+        videid = videde[guildid][0]
         q = f"https://www.youtube.com/watch?v={videid}"
         
         async with chanid[guildid].typing():
           await asyncio.sleep(0.5)
           await chanid[guildid].send("キューに追加: "+q)
-        enqueue(voice[guildid],q)
+        await enqueue(voice[guildid],q)
     f.close()
 
 @bot.command()
@@ -728,24 +751,24 @@ async def recommend(message):#おすすめリストを全てキューに入れ�
     print(guildid)
     voiceid = message.author.voice
     global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
-    looping.setdefault(guildid,0)
-    qloo.setdefault(guildid,0)  
-    print_title.setdefault(guildid,0)
-    voice.setdefault(guildid,None)
     chanid[guildid] = bot.get_channel(message.channel.id)
-    if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-    elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+    looping.setdefault(guildid,0)
+    qloo.setdefault(guildid,0)
+    voice.setdefault(guildid,None)  
+    print_title.setdefault(guildid,0) 
+    if voice[guildid] == None:
+                        voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                        chanid[guildid] = bot.get_channel(message.channel.id)
+                        vcid[guildid] = message.author.voice.channel.id
+                        channelid[guildid] = message.channel.id
+                        print(channelid)
+                        print(channelid[guildid])
     elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
+              await voice[guildid].move_to(message.author.voice.channel)
+              vcid[guildid] = message.author.voice.channel.id
+    elif voiceid == None:
+          await chanid[guildid].send("ボイスチャットに参加してください")
+          return
     nn = os.path.dirname(os.path.abspath(__file__))
     f = open(f'{nn}/recommend.txt', "r")
     lis = f.readlines()
@@ -753,7 +776,7 @@ async def recommend(message):#おすすめリストを全てキューに入れ�
         for line in lis:
           line = line.rstrip()  # 読み込んだ行の末尾には改行文字があるので改行文字を削除
           if line[:5] == "https":
-            enqueue(voice[guildid],line)
+            await enqueue(voice[guildid],line)
         await chanid[guildid].send("ADMINのおすすめの曲を再生します。(詳細は.qコマンドを使用(ログが流れます))")
     else:
         await chanid[guildid].send("ADMINのおすすめの曲は現在ありません。")
@@ -766,36 +789,36 @@ async def racoms(message):#おすすめリストを全てキューに入れる
     print(guildid)
     voiceid = message.author.voice
     global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)  
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id)
-    if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-    elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+    print_title.setdefault(guildid,0) 
+    if voice[guildid] == None:
+                        voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                        chanid[guildid] = bot.get_channel(message.channel.id)
+                        vcid[guildid] = message.author.voice.channel.id
+                        channelid[guildid] = message.channel.id
+                        print(channelid)
+                        print(channelid[guildid])
     elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
+              await voice[guildid].move_to(message.author.voice.channel)
+              vcid[guildid] = message.author.voice.channel.id
+    elif voiceid == None:
+          await chanid[guildid].send("ボイスチャットに参加してください")
+          return
     nn = os.path.dirname(os.path.abspath(__file__))
-    f = open(f'{nn}/recommend.txt', "r")
-    lis = f.readlines()
+    fileing = open(f'{nn}/recommend.txt', "r")
+    lis = fileing.readlines()
     if len(lis) >= 1:
         for line in lis:
           line = line.rstrip()  # 読み込んだ行の末尾には改行文字があるので改行文字を削除
           if line[:5] == "https":
-            enqueue(voice[guildid],line)
+            await enqueue(voice[guildid],line)
         await chanid[guildid].send("ADMINのおすすめの曲を再生します。(詳細は.qコマンドを使用(ログが流れます))")
     else:
         await chanid[guildid].send("ADMINのおすすめの曲は現在ありません。")
-    f.close()
+    fileing.close()
 
 @bot.command()
 async def search(message,*,aft):#検索する。動画idを取得して、youtubeのURLの後にくっつけてるだけ
@@ -803,53 +826,55 @@ async def search(message,*,aft):#検索する。動画idを取得して、youtub
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music
+    chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id)
+    print_title.setdefault(guildid,0)   
     if you ==False:
         await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
-    titl = []
-    videde = []
+    titl[guildid] = []
+    videde[guildid] = []
     sss = aft
-    ff = func_youtube.youtubeop(5,sss)
-    videde = list(ff[0])
-    titl = list(ff[1])
-      #youtube_url = f"https://www.youtube.com/watch?v={videde}"
+    ff = await fy.youtubeop(5,sss,guildid)
+    videde[guildid] = list(ff[0])
+    titl[guildid] = list(ff[1])
+      #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
 
-    if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-    elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+    if voice[guildid] == None:
+                        voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                        chanid[guildid] = bot.get_channel(message.channel.id)
+                        vcid[guildid] = message.author.voice.channel.id
+                        channelid[guildid] = message.channel.id
+                        print(channelid)
+                        print(channelid[guildid])
     elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
+              await voice[guildid].move_to(message.author.voice.channel)
+              vcid[guildid] = message.author.voice.channel.id
+    elif voiceid == None:
+          await chanid[guildid].send("ボイスチャットに参加してください")
+          return
 
     count_music = 1
     if print_title[guildid] == 0:
-            for spt in videde:
+            for spt in videde[guildid]:
               await chanid[guildid].send(str(count_music)+": https://www.youtube.com/watch?v="+spt)
-              count_music = count_music + 1
-              if count_music == len(videde) + 1:
+              
+              if count_music == len(videde[guildid]):
                 break
+              count_music = count_music + 1
     elif print_title[guildid] == 1:
-            for spt in titl:
+            for spt in titl[guildid]:
               await chanid[guildid].send(str(count_music)+": "+spt)
-              count_music = count_music + 1
-              if count_music == len(titl) + 1:
+              
+              if count_music == len(titl[guildid]):
                 break
+              count_music = count_music + 1
     await chanid[guildid].send("流したい曲の番号を送信してください(.無し)")
     elect = 1
-    #enqueue(voice[guildid],youtube_url)
+    #await enqueue(voice[guildid],youtube_url)
 
 
 @bot.command()
@@ -858,53 +883,55 @@ async def sc(message,*,aft):#検索する。動画idを取得して、youtubeの
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music
+    chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id)
+    print_title.setdefault(guildid,0)   
     if you ==False:
         await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
-    titl = []
-    videde = []
+    titl[guildid] = []
+    videde[guildid] = []
     sss = aft
-    ff = func_youtube.youtubeop(5,sss)
-    videde = list(ff[0])
-    titl = list(ff[1])
-      #youtube_url = f"https://www.youtube.com/watch?v={videde}"
+    ff = await fy.youtubeop(5,sss,guildid)
+    videde[guildid] = list(ff[0])
+    titl[guildid] = list(ff[1])
+      #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
 
-    if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-    elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+    if voice[guildid] == None:
+                        voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                        chanid[guildid] = bot.get_channel(message.channel.id)
+                        vcid[guildid] = message.author.voice.channel.id
+                        channelid[guildid] = message.channel.id
+                        print(channelid)
+                        print(channelid[guildid])
     elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
+              await voice[guildid].move_to(message.author.voice.channel)
+              vcid[guildid] = message.author.voice.channel.id
+    elif voiceid == None:
+          await chanid[guildid].send("ボイスチャットに参加してください")
+          return
 
     count_music = 1
     if print_title[guildid] == 0:
-            for spt in videde:
+            for spt in videde[guildid]:
               await chanid[guildid].send(str(count_music)+": https://www.youtube.com/watch?v="+spt)
-              count_music = count_music + 1
-              if count_music == len(videde) + 1:
+              
+              if count_music == len(videde[guildid]):
                 break
+              count_music = count_music + 1
     elif print_title[guildid] == 1:
-            for spt in titl:
+            for spt in titl[guildid]:
               await chanid[guildid].send(str(count_music)+": "+spt)
-              count_music = count_music + 1
-              if count_music == len(titl) + 1:
+              
+              if count_music == len(titl[guildid]):
                 break
+              count_music = count_music + 1
     await chanid[guildid].send("流したい曲の番号を送信してください(.無し)")
     elect = 1
-    #enqueue(voice[guildid],youtube_url)
+    #await enqueue(voice[guildid],youtube_url)
 
 @bot.command()
 async def play_one_song(message,*,aft):#1曲のみ検索する 動作速度を優先した感じ
@@ -912,89 +939,92 @@ async def play_one_song(message,*,aft):#1曲のみ検索する 動作速度を�
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,count_music
+    chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    chanid[guildid] = bot.get_channel(message.channel.id)
+    print_title.setdefault(guildid,0)  
+    
     if you ==False:
         await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
-
     if aft[:8] == "https://":
         await chanid[guildid].send("URLではこの機能は使えません")
     else:
-        videde =[]
-        titl = []
-        ff = func_youtube.youtubeop(1,aft)
-        videde = list(ff[0])
-        titl = list(ff[1])
-        #youtube_url = f"https://www.youtube.com/watch?v={videde}"
-        if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-        elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+        videde[guildid] =[]
+        titl[guildid] = []
+        ff = await fy.youtubeop(1,aft,guildid)
+        videde[guildid] = list(ff[0])
+        titl[guildid] = list(ff[1])
+        #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
+        if voice[guildid] == None:
+                        voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                        chanid[guildid] = bot.get_channel(message.channel.id)
+                        vcid[guildid] = message.author.voice.channel.id
+                        channelid[guildid] = message.channel.id
+                        print(channelid)
+                        print(channelid[guildid])
         elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
+              await voice[guildid].move_to(message.author.voice.channel)
+              vcid[guildid] = message.author.voice.channel.id
+        elif voiceid == None:
+          await chanid[guildid].send("ボイスチャットに参加してください")
+          return
         
-        videid = videde[0]
+        videid = videde[guildid][0]
         q = f"https://www.youtube.com/watch?v={videid}"
         async with chanid[guildid].typing():
           await asyncio.sleep(0.5)
           await chanid[guildid].send("キューに追加: "+q)
-        enqueue(voice[guildid],q)    
+        await enqueue(voice[guildid],q)    
 
 @bot.command()
 async def pos(message,*,aft):#1曲のみ検索する 動作速度を優先した感じ
     global guildid
     guildid = message.guild.id
     print(guildid)
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,looping,qloo
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,looping,qloo,count_music
+    await asyncio.sleep(0.1)
+    chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
     voice.setdefault(guildid,None)
-    print(qloo[guildid])  
+    print_title.setdefault(guildid,0) 
+    print(qloo[guildid])
     if you ==False:
         await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
-
     if aft[:8] == "https://":
         await chanid[guildid].send("URLではこの機能は使えません")
     else:
+        videde[guildid] =[]
+        titl[guildid] = []
+        ff = await fy.youtubeop(1,aft,guildid)
+        videde= ff[0]
+        titl = ff[1]
         voiceid = message.author.voice
-        if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-        elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+        if voice[guildid] == None:
+                        voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                        chanid[guildid] = bot.get_channel(message.channel.id)
+                        vcid[guildid] = message.author.voice.channel.id
+                        channelid[guildid] = message.channel.id
+                        print(channelid)
+                        print(channelid[guildid])
         elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
-        videde =[]
-        titl = []
-        ff = func_youtube.youtubeop(1,aft)
-        videde = list(ff[0])
-        titl = list(ff[1])
-        #youtube_url = f"https://www.youtube.com/watch?v={videde}"
+              await voice[guildid].move_to(message.author.voice.channel)
+              vcid[guildid] = message.author.voice.channel.id
+        elif voiceid == None:
+          await chanid[guildid].send("ボイスチャットに参加してください")
+          return
+
+
+        #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
 
         
-        videid = videde[0]
+        videid = videde[guildid][0]
         q = f"https://www.youtube.com/watch?v={videid}"
-        enqueue(voice[guildid],q) 
+        await enqueue(voice[guildid],q) 
         async with chanid[guildid].typing():
           await asyncio.sleep(0.5)
           await chanid[guildid].send("キューに追加: "+q)
@@ -1006,12 +1036,12 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music
     print("aft:"+aft)
+    voice.setdefault(guildid,None)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0)
-    voice.setdefault(guildid,None)
+    print_title.setdefault(guildid,0) 
     #idx = msg.find(" ")
     chanid[guildid] = bot.get_channel(message.channel.id)
     if aft[:8] == "https://": #youtubeのURLかを判別。
@@ -1028,40 +1058,40 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
                 queue_dict[guildid].append("https://www.youtube.com/watch?v="+ten[13:24])
               print(queue_dict)
 
-              if voiceid == None:
-                await chanid[guildid].send("ボイスチャットに参加してください。")
-                return
-              elif voice[guildid] == None:
-                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                chanid[guildid] = bot.get_channel(message.channel.id)
-                vcid[guildid] = message.author.voice.channel.id
-                channelid[guildid] = message.channel.id
-                print(channelid)
-                print(channelid[guildid])
+              if voice[guildid] == None:
+                              voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                              chanid[guildid] = bot.get_channel(message.channel.id)
+                              vcid[guildid] = message.author.voice.channel.id
+                              channelid[guildid] = message.channel.id
+                              print(channelid)
+                              print(channelid[guildid])
               elif vcid[guildid] != message.author.voice.channel.id:
-                await voice[guildid].move_to(message.author.voice.channel)
-                vcid[guildid] = message.author.voice.channel.id
-              ytl(queue_dict[guildid])
+                    await voice[guildid].move_to(message.author.voice.channel)
+                    vcid[guildid] = message.author.voice.channel.id
+              elif voiceid == None:
+                await chanid[guildid].send("ボイスチャットに参加してください")
+                return
+              ytl (queue_dict[guildid])
               async with chanid[guildid].typing():
                 await asyncio.sleep(0.5)
                 await chanid[guildid].send("playlistを追加しました。")
 
             else: #曲のURLがそのままのとき
-                if voiceid == None:
-                  await chanid[guildid].send("ボイスチャットに参加してください。")
-                  return
-                elif voice[guildid] == None:
-                  voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                  chanid[guildid] = bot.get_channel(message.channel.id)
-                  vcid[guildid] = message.author.voice.channel.id
-                  channelid[guildid] = message.channel.id
-                  print(channelid)
-                  print(channelid[guildid])
+                if voice[guildid] == None:
+                                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                                chanid[guildid] = bot.get_channel(message.channel.id)
+                                vcid[guildid] = message.author.voice.channel.id
+                                channelid[guildid] = message.channel.id
+                                print(channelid)
+                                print(channelid[guildid])
                 elif vcid[guildid] != message.author.voice.channel.id:
-                  await voice[guildid].move_to(message.author.voice.channel)
-                  vcid[guildid] = message.author.voice.channel.id
+                      await voice[guildid].move_to(message.author.voice.channel)
+                      vcid[guildid] = message.author.voice.channel.id
+                elif voiceid == None:
+                  await chanid[guildid].send("ボイスチャットに参加してください")
+                  return
 
-                enqueue(voice[guildid],youtube_url)
+                await enqueue(voice[guildid],youtube_url)
                 async with chanid[guildid].typing():
                  await asyncio.sleep(0.5)
                 await chanid[guildid].send("正常に追加されました。")
@@ -1070,44 +1100,45 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
           if you ==False:
             await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
             return
-          videde =[]
-          titl = []
+          videde[guildid] =[]
+          titl[guildid] = []
           sss = aft
-          ff = func_youtube.youtubeop(5,sss)
-          videde = list(ff[0])
-          titl = list(ff[1])
-          
-         #youtube_url = f"https://www.youtube.com/watch?v={videde}"
-          if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-          elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+          ff = await fy.youtubeop(5,sss,guildid)
+          videde[guildid] = ff[0]
+          titl[guildid] = ff[1]
+         #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
+          if voice[guildid] == None:
+                          voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                          chanid[guildid] = bot.get_channel(message.channel.id)
+                          vcid[guildid] = message.author.voice.channel.id
+                          channelid[guildid] = message.channel.id
+                          print(channelid)
+                          print(channelid[guildid])
           elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
+                await voice[guildid].move_to(message.author.voice.channel)
+                vcid[guildid] = message.author.voice.channel.id
+          elif voiceid == None:
+            await chanid[guildid].send("ボイスチャットに参加してください")
+            return
 
           count_music = 1
           if print_title[guildid] == 0: #候補を5個並べる。選択の部分はまた別な場所(上の方にある)
-            for spt in videde:
+            for spt in videde[guildid]:
               await chanid[guildid].send(str(count_music)+": https://www.youtube.com/watch?v="+spt)
-              count_music = count_music + 1
-              if count_music == len(videde) + 1:
+              
+              if count_music == len(videde[guildid]):
                 break
+              count_music = count_music + 1
           elif print_title[guildid] == 1:
-            for spt in titl:
+            for spt in titl[guildid]:
               await chanid[guildid].send(str(count_music)+": "+spt)
-              count_music = count_music + 1
-              if count_music == len(titl) + 1:
+              
+              if count_music == len(titl[guildid]):
                 break
+              count_music = count_music + 1
           await chanid[guildid].send("流したい曲の番号を送信してください(.無し)") #動作速度を早めるためにはどうすればええんや...
           elect = 1
-          #enqueue(voice[guildid],youtube_url)
+          #await enqueue(voice[guildid],youtube_url)
 
 @bot.command()
 async def p(message,*,aft):#指定されたURLの曲を流す。
@@ -1115,13 +1146,12 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
   guildid = message.guild.id
   print(guildid)
   voiceid = message.author.voice
-  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title
+  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music
   print("aft:"+aft)
+  voice.setdefault(guildid,None)
   looping.setdefault(guildid,0)
   qloo.setdefault(guildid,0)
-  print_title.setdefault(guildid,0)
-  voice.setdefault(guildid,None)
-  chanid[guildid] = bot.get_channel(message.channel.id)
+  print_title.setdefault(guildid,0) 
   #idx = msg.find(" ")
   #chanid = bot.get_channel(message.channel.id)
   if aft[:8] == "https://": #youtubeのURLかを判別。
@@ -1138,19 +1168,19 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
                 queue_dict[guildid].append("https://www.youtube.com/watch?v="+ten[13:24])
               print(queue_dict)
 
-              if voiceid == None:
-                await chanid[guildid].send("ボイスチャットに参加してください。")
-                return
-              elif voice[guildid] == None:
-                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                chanid[guildid] = bot.get_channel(message.channel.id)
-                vcid[guildid] = message.author.voice.channel.id
-                channelid[guildid] = message.channel.id
-                print(channelid)
-                print(channelid[guildid])
+              if voice[guildid] == None:
+                              voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                              chanid[guildid] = bot.get_channel(message.channel.id)
+                              vcid[guildid] = message.author.voice.channel.id
+                              channelid[guildid] = message.channel.id
+                              print(channelid)
+                              print(channelid[guildid])
               elif vcid[guildid] != message.author.voice.channel.id:
-                await voice[guildid].move_to(message.author.voice.channel)
-                vcid[guildid] = message.author.voice.channel.id
+                    await voice[guildid].move_to(message.author.voice.channel)
+                    vcid[guildid] = message.author.voice.channel.id
+              elif voiceid == None:
+                await chanid[guildid].send("ボイスチャットに参加してください")
+                return
 
               ytl(queue_dict[guildid])
               async with chanid[guildid].typing():
@@ -1158,21 +1188,21 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
                 await chanid[guildid].send("playlistを追加しました。")
 
             else: #曲のURLがそのままのとき
-                if voiceid == None:
-                  await chanid[guildid].send("ボイスチャットに参加してください。")
-                  return
-                elif voice[guildid] == None:
-                  voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-                  chanid[guildid] = bot.get_channel(message.channel.id)
-                  vcid[guildid] = message.author.voice.channel.id
-                  channelid[guildid] = message.channel.id
-                  print(channelid)
-                  print(channelid[guildid])
+                if voice[guildid] == None:
+                                voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                                chanid[guildid] = bot.get_channel(message.channel.id)
+                                vcid[guildid] = message.author.voice.channel.id
+                                channelid[guildid] = message.channel.id
+                                print(channelid)
+                                print(channelid[guildid])
                 elif vcid[guildid] != message.author.voice.channel.id:
-                  await voice[guildid].move_to(message.author.voice.channel)
-                  vcid[guildid] = message.author.voice.channel.id
+                      await voice[guildid].move_to(message.author.voice.channel)
+                      vcid[guildid] = message.author.voice.channel.id
+                elif voiceid == None:
+                  await chanid[guildid].send("ボイスチャットに参加してください")
+                  return
 
-                enqueue(voice[guildid],youtube_url)
+                await enqueue(voice[guildid],youtube_url)
                 async with chanid[guildid].typing():
                  await asyncio.sleep(0.5)
                 await chanid[guildid].send("正常に追加されました。")
@@ -1181,44 +1211,46 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
           if you ==False:
             await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
             return
-          videde =[]
-          titl = []
+          videde[guildid] =[]
+          titl[guildid] = []
           sss = aft
-          ff = func_youtube.youtubeop(5,sss)
-          videde = list(ff[0])
-          titl = list(ff[1])
-         #youtube_url = f"https://www.youtube.com/watch?v={videde}"
-          if voiceid == None:
-            await chanid[guildid].send("ボイスチャットに参加してください。")
-            return
-          elif voice[guildid] == None:
-            voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
-            chanid[guildid] = bot.get_channel(message.channel.id)
-            vcid[guildid] = message.author.voice.channel.id
-            channelid[guildid] = message.channel.id
-            print(channelid)
-            print(channelid[guildid])
+          ff = await fy.youtubeop(5,sss,guildid)
+          videde = ff[0]
+          titl = ff[1]
+          print(f"videde[guildid]: {videde[guildid]}")
+         #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
+          if voice[guildid] == None:
+                          voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
+                          chanid[guildid] = bot.get_channel(message.channel.id)
+                          vcid[guildid] = message.author.voice.channel.id
+                          channelid[guildid] = message.channel.id
+                          print(channelid)
+                          print(channelid[guildid])
           elif vcid[guildid] != message.author.voice.channel.id:
-            await voice[guildid].move_to(message.author.voice.channel)
-            vcid[guildid] = message.author.voice.channel.id
-            
+                await voice[guildid].move_to(message.author.voice.channel)
+                vcid[guildid] = message.author.voice.channel.id
+          elif voiceid == None:
+            await chanid[guildid].send("ボイスチャットに参加してください")
+            return
 
           count_music = 1
           if print_title[guildid] == 0: #候補を5個並べる。選択の部分はまた別な場所(上の方にある)
-            for spt in videde:
+            for spt in videde[guildid]:
               await chanid[guildid].send(str(count_music)+": https://www.youtube.com/watch?v="+spt)
-              count_music = count_music + 1
-              if count_music == len(videde) + 1:
+
+              if count_music == len(videde[guildid]):
                 break
+              count_music = count_music + 1
           elif print_title[guildid] == 1:
-            for spt in titl:
+            for spt in titl[guildid]:
               await chanid[guildid].send(str(count_music)+": "+spt)
-              count_music = count_music + 1
-              if count_music == len(titl) + 1:
+              
+              if count_music == len(titl[guildid]):
                 break
+              count_music = count_music + 1
           await chanid[guildid].send("流したい曲の番号を送信してください(.無し)") #動作速度を早めるためにはどうすればええんや...
           elect = 1
-          #enqueue(voice[guildid],youtube_url)
+          #await enqueue(voice[guildid],youtube_url)
 
 if __name__ == '__main__': #起動
   bot.run(TOKEN)
