@@ -13,6 +13,7 @@ from google.auth.transport.requests import _Response, Request
 videde ={}
 titl={}
 ser = {}
+sati = {}
 #Tokenを取得
 nn = os.path.dirname(os.path.abspath(__file__))
 with open(f"{nn}/TOKEN.txt", "r",encoding="utf-8") as temp_file:
@@ -36,6 +37,8 @@ async def youtube_search(options,guildid):
   global videde,titl,ser
   videde.setdefault(guildid,[])
   titl.setdefault(guildid,[])
+  videde[guildid] = []
+  titl[guildid] = []
   youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
     developerKey=DEVELOPER_KEY)
 
@@ -68,15 +71,15 @@ async def youtube_search(options,guildid):
 
 #youtubeで検索するための設定。.scで来たワードを入れる
 async def youtubeop(num,sss,guildid):
-  global ser
+  global ser,sati
+  sati[guildid] = sss
   # 検索ワード
   argparser = argparse.ArgumentParser()
   argparser.add_argument("--q")
   # 検索上限
   argparser.add_argument("--max-results", help="Max results", default=num)
   args = argparser.parse_args()
-  args.q = sss
-  
+  args.q = sati[guildid]  
   try:
     ser[guildid] = await youtube_search(args,guildid)
     guildid = ser[guildid][2]

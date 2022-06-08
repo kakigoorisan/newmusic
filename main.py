@@ -96,10 +96,14 @@ def ytl(que,guildid):
   global voice,t,ended,titl,meme,looping,loopingskip,videde,videid
   ai = que[guildid][0]
   videid = ai
-  song = pafy.new(videid) #pafyに引数を渡す
-  audio= song.getbestaudio()  
-  source= FFmpegPCMAudio(audio.url, **FFMPEG_OPTIONS)  
-  voice[guildid].play(source,after=lambda e : ende(que,guildid)) #流す  
+  try:
+    song = pafy.new(videid) #pafyに引数を渡す
+    audio= song.getbestaudio()  
+    source= FFmpegPCMAudio(audio.url, **FFMPEG_OPTIONS)  
+    voice[guildid].play(source,after=lambda e : ende(que,guildid)) #流す 
+  except:
+    ende(que,guildid)
+ 
         
 #終了後にqueueの先頭を削除
 def ende(queu,guildid):
@@ -156,14 +160,15 @@ async def on_ready():
 @bot.event
 async def on_voice_state_update(member, before, after):
   global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,looping,titl,elect,meme,print_title,queue_title,count_music,loopingskip,videid,chanid,vcid
-  print("抜けた")
 
   if before.channel != None and vcid != {}:
     befoguild = {}
     guildid = before.channel.guild.id
     befoguild[guildid] = before.channel.id
-    if voice != None and before.channel != None:
+    keycheck = guildid in voice
+    if keycheck == True and voice[guildid] != None and before.channel != None:
       if befoguild[guildid] == vcid[guildid]:
+        print("抜けた")
         name = voice[guildid].channel.members
         if len(name) == 1:
           print(name)
@@ -287,7 +292,7 @@ async def remove(message, aft): #キューの中の曲を削除
     if aft == "1":
         await chanid[guildid].send("現在再生している曲です")
       
-    elif int(aft) > len(queue_dict):
+    elif int(aft) > len(queue_dict[guildid]):
         await chanid[guildid].send("範囲外です")
         return
     else:
@@ -329,6 +334,7 @@ async def help(message):#botのコマンド
 async def dc(message):
     global queue_dict,qloo,looping,voice,guildid,chanid#切断
     guildid = message.guild.id
+    chanid[guildid] = bot.get_channel(message.channel.id)
     qloo[guildid] = 0
     looping[guildid] = 0
     queue_dict[guildid].clear()
@@ -337,19 +343,17 @@ async def dc(message):
 
     #guild = message.guild.voice_client
     await voice[guildid].disconnect()
-    voice = None
-    j = 0
-            #guild = message.guild.voice_client
-    del voice[guildid] 
-    del chanid[guildid]          
+    #guild = message.guild.voice_client          
     async with chanid[guildid].typing():
         await asyncio.sleep(0.7)
         await chanid[guildid].send("good bye!")
+    del voice[guildid] 
+    del chanid[guildid]
         
 @bot.command()
 async def join(message):
-  global voice,guildid
-  voiceid = message.auther.voice
+  global voice,guildid,queue_dicte
+  voiceid = message.author.voice
   guildid = message.guild.id
   voice.setdefault(guildid,None)
   if voice[guildid] == None:
@@ -357,6 +361,7 @@ async def join(message):
                             chanid[guildid] = bot.get_channel(message.channel.id)
                             vcid[guildid] = message.author.voice.channel.id
                             channelid[guildid] = message.channel.id
+                            queue_dict.setdefault(guildid,[])
                             print(channelid)
                             print(channelid[guildid])
   elif vcid[guildid] != message.author.voice.channel.id:
