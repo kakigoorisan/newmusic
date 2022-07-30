@@ -407,7 +407,7 @@ async def q(message):
         await chanid[guildid].send(str(count_music)+":"+spt)
         count_music = count_music + 1
     if qloo[guildid] == 1:
-        await chanid[guildid].send("queuelooing: \N{Heavy Large Circle}")
+        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
     elif qloo[guildid] == 0:
         await chanid[guildid].send("queueloop: \N{Cross Mark}")
     if looping[guildid] == 1:
@@ -437,10 +437,10 @@ async def loop(message):#一曲のみのloopingをon,offする
     guildid = message.guild.id
     if looping[guildid] == 0:
         looping[guildid] = 1
-        await message.channel.send("loopingがonになりました")
+        await message.channel.send("loopがonになりました")
     elif looping[guildid] == 1:
         looping[guildid] = 0
-        await message.channel.send("loopingがoffになりました")
+        await message.channel.send("loopがoffになりました")
 
 @bot.command()
 async def lp(message):
@@ -448,10 +448,10 @@ async def lp(message):
     guildid = message.guild.id
     if looping[guildid] == 0:
         looping[guildid] = 1
-        await message.channel.send("loopingがonになりました")
+        await message.channel.send("loopがonになりました")
     elif looping[guildid] == 1:
         looping[guildid] = 0
-        await message.channel.send("loopingがoffになりました")
+        await message.channel.send("loopがoffになりました")
 
 
 @bot.command()
@@ -460,10 +460,10 @@ async def queueloop(message):#queueloopingをon,offする。
     guildid = message.guild.id
     if qloo[guildid] == 0:
         qloo[guildid] = 1
-        await message.channel.send("queueloopingがonになりました")
+        await message.channel.send("queueloopがonになりました")
     elif qloo[guildid] == 1:
         qloo[guildid] = 0
-        await message.channel.send("queueloopingがoffになりました")
+        await message.channel.send("queueloopがoffになりました")
 
 @bot.command()
 async def qlp(message):#queueloopingをon,offする。
@@ -471,23 +471,23 @@ async def qlp(message):#queueloopingをon,offする。
     guildid = message.guild.id
     if qloo[guildid] == 0:
         qloo[guildid] = 1
-        await message.channel.send("queueloopingがonになりました")
+        await message.channel.send("queueloopがonになりました")
     elif qloo[guildid] == 1:
         qloo[guildid] = 0
-        await message.channel.send("queueloopingがoffになりました")
+        await message.channel.send("queueloopがoffになりました")
 
 @bot.command()
 async def lpinfo(message):#loopingの状態を確認
     global qloo,looping,guildid,chanid
     guildid = message.guild.id
     if qloo[guildid] == 1:
-        await chanid[guildid].send("queuelooping: \N{Heavy Large Circle}")
+        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
     elif qloo[guildid] == 0:
-        await chanid[guildid].send("queuelooping: \N{Cross Mark}")
+        await chanid[guildid].send("queueloop: \N{Cross Mark}")
     if looping[guildid] == 1:
-        await chanid[guildid].send("looping: \N{Heavy Large Circle}")
+        await chanid[guildid].send("loop: \N{Heavy Large Circle}")
     elif looping[guildid] == 0:
-        await chanid[guildid].send("looping : \N{Cross Mark}")
+        await chanid[guildid].send("loop: \N{Cross Mark}")
 
 
 @bot.command()
@@ -1037,19 +1037,19 @@ async def pos(message,*,aft):#1曲のみ検索する 動作速度を優先した
 
 @bot.command()
 async def play(message,*,aft):#指定されたURLの曲を流す。
-    global guildid
-    guildid = message.guild.id
-    print(guildid)
-    voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music
-    print("aft:"+aft)
-    voice.setdefault(guildid,None)
-    looping.setdefault(guildid,0)
-    qloo.setdefault(guildid,0)
-    print_title.setdefault(guildid,0) 
-    #idx = msg.find(" ")
-    chanid[guildid] = bot.get_channel(message.channel.id)
-    if aft[:8] == "https://": #youtubeのURLかを判別。
+  global guildid
+  guildid = message.guild.id
+  print(guildid)
+  voiceid = message.author.voice
+  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music
+  print("aft:"+aft)
+  voice.setdefault(guildid,None)
+  looping.setdefault(guildid,0)
+  qloo.setdefault(guildid,0)
+  print_title.setdefault(guildid,0) 
+  #idx = msg.find(" ")
+  #chanid = bot.get_channel(message.channel.id)
+  if aft[:8] == "https://": #youtubeのURLかを判別。
             youtube_url = aft
             if youtube_url[24:32] == "playlist": #プレイリストか判別
               temp = []
@@ -1076,7 +1076,8 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
               elif voiceid == None:
                 await chanid[guildid].send("ボイスチャットに参加してください")
                 return
-              ytl (queue_dict[guildid])
+
+              ytl(queue_dict[guildid])
               async with chanid[guildid].typing():
                 await asyncio.sleep(0.5)
                 await chanid[guildid].send("playlistを追加しました。")
@@ -1101,16 +1102,17 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
                  await asyncio.sleep(0.5)
                 await chanid[guildid].send("正常に追加されました。")
 
-    else: #URLじゃなかったんだね...
+  else: #URLじゃなかったんだね...
           if you ==False:
-            await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
+            await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
             return
           videde[guildid] =[]
           titl[guildid] = []
           sss = aft
           ff = await fy.youtubeop(5,sss,guildid)
-          videde[guildid] = ff[0]
-          titl[guildid] = ff[1]
+          videde = ff[0]
+          titl = ff[1]
+          print(f"videde[guildid]: {videde[guildid]}")
          #youtube_url = f"https://www.youtube.com/watch?v={videde[guildid]}"
           if voice[guildid] == None:
                           voice[guildid] = await message.author.voice.channel.connect(reconnect = True)
@@ -1130,7 +1132,7 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
           if print_title[guildid] == 0: #候補を5個並べる。選択の部分はまた別な場所(上の方にある)
             for spt in videde[guildid]:
               await chanid[guildid].send(str(count_music)+": https://www.youtube.com/watch?v="+spt)
-              
+
               if count_music == len(videde[guildid]):
                 break
               count_music = count_music + 1
