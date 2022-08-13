@@ -1,5 +1,5 @@
 from calendar import c
-from distutils.log import debug
+from distutils.log import debug, error
 from itertools import count
 from multiprocessing.connection import answer_challenge
 from operator import truediv
@@ -70,6 +70,8 @@ vcid = {}
 you = True
 guildid = 0
 channelid = {}
+error_count = 0
+error_check = False
 
 #devkeyの有無
 if DEVELOPER_KEY == "no":
@@ -84,7 +86,7 @@ async def enqueue(voice_client, youtube_ur):
     print(queue_dict)
     
     if not voice_client.is_playing():
-        ytl(queue_dict,guildid)
+        await ytl(queue_dict,guildid)
     else:
       return
 
@@ -92,8 +94,8 @@ async def enqueue(voice_client, youtube_ur):
 
 
 #URLでyoutubeに飛んで、再生。
-def ytl(que,guildid):
-  global voice,t,ended,titl,meme,looping,loopingskip,videde,videid
+async def ytl(que,guildid):
+  global voice,t,ended,titl,meme,looping,loopingskip,videde,videid,error_count,chanid,error_check
   ai = que[guildid][0]
   videid = ai
   try:
@@ -102,18 +104,27 @@ def ytl(que,guildid):
     source= FFmpegPCMAudio(audio.url, **FFMPEG_OPTIONS)  
     voice[guildid].play(source,after=lambda e : ende(que,guildid)) #流す 
   except:
-    ende(que,guildid)
+    error_count = error_count + 1
+    if error_count <= 5:
+      print(error_count)
+      await ytl(que,guildid)
+    elif error_count >= 6:
+      error_check = True
+      await chanid[guildid].send("エラーが発生しました。")
+      print("I have too many ERRORs! Please check the code!")
+      await ende(que,guildid)
  
         
 #終了後にqueueの先頭を削除
-def ende(queu,guildid):
+async def ende(queu,guildid):
   print("done")
-  global ended,qloo,looping,chanid
+  global ended,qloo,looping,chanid,error_count
+  error_count = 0
   print(queu[guildid])
   if qloo[guildid] == 0 and looping[guildid] == 0:
     if len(queu[guildid]) >= 2:  
       del queu[guildid][0]
-      ytl(queu,guildid)
+      await ytl(queu,guildid)
     elif len(queu[guildid]) == 1:
       del queu[guildid][0]
       print(queu[guildid])
@@ -126,9 +137,9 @@ def ende(queu,guildid):
     del queu[guildid][0]
     print(queu[guildid])
     if len(queu[guildid]) >= 1 :
-        ytl(queu,guildid)
+        await ytl(queu,guildid)
   elif looping[guildid] == 1:
-    ytl(queu,guildid)
+    await ytl(queu,guildid)
   else:
     return
 
@@ -1041,7 +1052,7 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
   guildid = message.guild.id
   print(guildid)
   voiceid = message.author.voice
-  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music
+  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music,error_check
   print("aft:"+aft)
   voice.setdefault(guildid,None)
   looping.setdefault(guildid,0)
@@ -1077,7 +1088,7 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
                 await chanid[guildid].send("ボイスチャットに参加してください")
                 return
 
-              ytl(queue_dict[guildid])
+              await ytl(queue_dict[guildid])
               async with chanid[guildid].typing():
                 await asyncio.sleep(0.5)
                 await chanid[guildid].send("playlistを追加しました。")
@@ -1098,10 +1109,12 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
                   return
 
                 await enqueue(voice[guildid],youtube_url)
-                async with chanid[guildid].typing():
-                 await asyncio.sleep(0.5)
-                await chanid[guildid].send("正常に追加されました。")
-
+                if error_check == False:
+                  async with chanid[guildid].typing():
+                   await asyncio.sleep(0.5)
+                  await chanid[guildid].send("正常に追加されました。")
+                elif error_check == True:
+                  error_check = False
   else: #URLじゃなかったんだね...
           if you ==False:
             await chanid[guildid].send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
@@ -1153,7 +1166,7 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
   guildid = message.guild.id
   print(guildid)
   voiceid = message.author.voice
-  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music
+  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music,error_check
   print("aft:"+aft)
   voice.setdefault(guildid,None)
   looping.setdefault(guildid,0)
@@ -1189,7 +1202,7 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
                 await chanid[guildid].send("ボイスチャットに参加してください")
                 return
 
-              ytl(queue_dict[guildid])
+              await ytl(queue_dict[guildid])
               async with chanid[guildid].typing():
                 await asyncio.sleep(0.5)
                 await chanid[guildid].send("playlistを追加しました。")
@@ -1210,9 +1223,12 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
                   return
 
                 await enqueue(voice[guildid],youtube_url)
-                async with chanid[guildid].typing():
-                 await asyncio.sleep(0.5)
-                await chanid[guildid].send("正常に追加されました。")
+                if error_check == False:
+                  async with chanid[guildid].typing():
+                   await asyncio.sleep(0.5)
+                  await chanid[guildid].send("正常に追加されました。")
+                elif error_check == True:
+                  error_check = False
 
   else: #URLじゃなかったんだね...
           if you ==False:

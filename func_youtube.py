@@ -92,9 +92,5 @@ async def youtubeop(num,sss,guildid):
     print (f"aaa {videde}")
     return (videde,titl,guildid)
 
-
-
-    
-  
   except HttpError as e:
     print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
