@@ -12,6 +12,7 @@ from discord.ext import commands
 from discord import player
 import os
 import asyncio
+from asyncio import coroutine, run
 import random
 #import slash_seat
 from googleapiclient.discovery import build
@@ -102,7 +103,7 @@ async def ytl(que,guildid):
     song = pafy.new(videid) #pafyに引数を渡す
     audio= song.getbestaudio()  
     source= FFmpegPCMAudio(audio.url, **FFMPEG_OPTIONS)  
-    voice[guildid].play(source,after=lambda e : ende(que,guildid)) #流す 
+    voice[guildid].play(source,after= lambda e : run(ende(que,guildid))) #流す 
   except:
     error_count = error_count + 1
     if error_count <= 5:
