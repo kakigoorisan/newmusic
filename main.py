@@ -357,7 +357,7 @@ async def pr_title(message):#検索時にタイトルのみにする
 async def info(message):#botの情報
     global chanid,guildid
     guildid = message.guild.id
-    await chanid[guildid].send("This bot made by kakigoori(2021) \n\n You can listen to music to use this bot. \n\n This bot is happened to occur an error or to slow down download.")
+    await chanid[guildid].send("This bot was made by kakigoori(2021-2023) \n\n If you would like to listen to music, you should use this bot. \n\n This bot is often happened to occur an error or to slow down download.")
 
 bot.remove_command('help')
 
@@ -365,7 +365,7 @@ bot.remove_command('help')
 async def help(message):#botのコマンド
     global chanid,guildid
     guildid = message.guild.id
-    await chanid[guildid].send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.pause :流れている曲を一時停止します。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.loopinginfo :loopingの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.loopinginfo :loopingの状況のみを返します\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.adw [言葉] :検索ワードリストに言葉を登録します\n.playlist [URL] :URLで指定されたプレイリストを再生します。このコマンドではプレイリストの任意の曲のURLを指定した場合もプレイリストとして判断されます。\n```")
+    await chanid[guildid].send("```.help :このメッセージを表示します。\n.play <URL>,<word> :URLでその曲、wordで検索して、流します。\n.sc <word> :wordをyoutube検索して、5個の候補を表示します。\n.q :キューの中身を表示します(ログが流れます)。\n.pause :流れている曲を一時停止します。\n.skip :流れている曲をスキップします。\n.clear :キューをリセットします。\n.dc :botをvcから切断させます。\n.move :vcを移動させます。\n.queueloop :キューをループさせます。\n.loop :一曲のみをループします。\n remove <キュー番号> :キューの特定の位置の曲をキューから削除します。 \n.pr_title :検索時にタイトルのみを表示します。(現在使えません)\n.info :botの情報を表示します\n.lpinfo :loopの状況のみを表示します\n.skipto :指定したキューの場所までスキップします\n.pos :1曲のみ検索して、再生します\n.rap [数字] :数字で指定した数だけ検索ワードリストから言葉を持ってきます\n.racom :おすすめの曲リストからランダムに1曲再生します。\n.adw [言葉] :検索ワードリストに言葉を登録します\n.playlist [URL] :URLで指定されたプレイリストを再生します。このコマンドではプレイリストの任意の曲のURLを指定した場合もプレイリストとして判断されます。\n```")
 
 
 @bot.command()
