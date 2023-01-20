@@ -14,6 +14,7 @@ videde ={}
 titl={}
 ser = {}
 sati = {}
+playlist_video={}
 #Tokenを取得
 nn = os.path.dirname(os.path.abspath(__file__))
 with open(f"{nn}/TOKEN.txt", "r",encoding="utf-8") as temp_file:
@@ -94,3 +95,30 @@ async def youtubeop(num,sss,guildid):
 
   except HttpError as e:
     print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
+
+
+#playlistが渡されたときの対応 .playlistで対応
+async def youtube_list(url,guildid):
+  global playlist_video
+  playlist_video[guildid]=[]
+  youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
+    developerKey=DEVELOPER_KEY)
+  playlist_setting = youtube.playlistItems().list(
+    part="id",
+    playlistId = url
+  ).execute()
+  temp = playlist_setting.get("pageInfo")
+  print(temp["totalResults"])
+  number_of = int(temp["totalResults"])
+
+  playlist_response = youtube.playlistItems().list( 
+    part="id,snippet,contentDetails",
+    maxResults = number_of,
+    playlistId = url
+  ).execute()
+  for play_list in playlist_response.get("items", []):
+    if play_list["kind"] == "youtube#playlistItem":
+      playlist_video[guildid].append(play_list["contentDetails"]["videoId"])
+  print(playlist_video[guildid])
+  return(playlist_video,guildid)
+
