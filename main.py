@@ -1268,10 +1268,10 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
                 if error_check == False:
                   async with chanid[guildid].typing():
                    await asyncio.sleep(0.5)
-                  if "playlist" in youtube_url == False:
-                    await chanid[guildid].send("正常に追加されました。")
-                  else:
+                  if "playlist" in youtube_url:
                     await chanid[guildid].send("プレイリスト中の曲が追加されました。プレイリスト全体を追加するには .playlist [URL] コマンドを使用してください。")
+                  else:
+                    await chanid[guildid].send("正常に追加されました。")
                   ff = await random_tips()
                   ran = ff
                   if ran == 1:
@@ -1392,10 +1392,10 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
                 if error_check == False:
                   async with chanid[guildid].typing():
                    await asyncio.sleep(0.5)
-                  if "playlist" in youtube_url == False:
-                    await chanid[guildid].send("正常に追加されました。")
-                  else:
+                  if "playlist" in youtube_url:
                     await chanid[guildid].send("プレイリスト中の曲が追加されました。プレイリスト全体を追加するには .playlist [URL] コマンドを使用してください。")
+                  else:
+                    await chanid[guildid].send("正常に追加されました。")
                 elif error_check == True:
                   error_check = False
   else:  # URLじゃなかったんだね...
