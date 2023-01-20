@@ -1111,8 +1111,12 @@ async def playlist(message,*,aft):
     if "playlist" in youtube_url == False:
       await message.channel.send("playlistのみ対応しているコマンドです")
     else:
-      step_one = youtube_url.split("&")[1]
-      playlist_url = step_one.replace("list=", "")
+      try:
+        step_one = youtube_url.split("&")[1]
+        playlist_url = step_one.replace("list=", "")
+      except:
+        step_two = youtube_url.split("?")[1]
+        playlist_url = step_two.replace("list=", "")
       pl = await fy.youtube_list(playlist_url, guildid)
       guildid = pl[1]
       playlist_video = pl[0]
@@ -1159,8 +1163,12 @@ async def pl(message, *, aft):
     if "playlist" in youtube_url == False:
       await message.channel.send("playlistのみ対応しているコマンドです")
     else:
-      step_one = youtube_url.split("&")[1]
-      playlist_url = step_one.replace("list=", "")
+      try:
+        step_one = youtube_url.split("&")[1]
+        playlist_url = step_one.replace("list=", "")
+      except:
+        step_two = youtube_url.split("?")[1]
+        playlist_url = step_two.replace("list=", "")
       pl = await fy.youtube_list(playlist_url, guildid)
       guildid = pl[1]
       playlist_video = pl[0]
@@ -1204,8 +1212,12 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
             youtube_url = aft
             playlist_url = ""
             if youtube_url[24:32] == "playlist": #プレイリストか判別
-              step_one = youtube_url.split("&")[1]
-              playlist_url = step_one.replace("list=","")
+              try:
+                step_one = youtube_url.split("&")[1]
+                playlist_url = step_one.replace("list=", "")
+              except:
+                step_two = youtube_url.split("?")[1]
+                playlist_url = step_two.replace("list=", "")
               pl = await fy.youtube_list(playlist_url,guildid)
               guildid = pl[1]
               playlist_video = pl[0]
@@ -1329,8 +1341,12 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
           youtube_url = aft
           playlist_url = ""
           if youtube_url[24:32] == "playlist":  # プレイリストか判別
-              step_one = youtube_url.split("&")[1]
-              playlist_url = step_one.replace("list=", "")
+              try:
+                step_one = youtube_url.split("&")[1]
+                playlist_url = step_one.replace("list=", "")
+              except:
+                step_two = youtube_url.split("?")[1]
+                playlist_url = step_two.replace("list=","")
               pl = await fy.youtube_list(playlist_url, guildid)
               guildid = pl[1]
               playlist_video = pl[0]
@@ -1356,10 +1372,6 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
               async with chanid[guildid].typing():
                 await asyncio.sleep(0.5)
                 await chanid[guildid].send("プレイリストが追加されました。詳細は.qで見ることができます。(ログが流れます)")
-                ff = await random_tips()
-                ran = ff
-                if ran == 1:
-                  await chanid[guildid].send("tips: .pでも再生できます")
 
           else:  # 曲のURLがそのままのとき
                 if voice[guildid] == None and voiceid != None:
@@ -1384,10 +1396,6 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
                     await chanid[guildid].send("正常に追加されました。")
                   else:
                     await chanid[guildid].send("プレイリスト中の曲が追加されました。プレイリスト全体を追加するには .playlist [URL] コマンドを使用してください。")
-                  ff = await random_tips()
-                  ran = ff
-                  if ran == 1:
-                    await chanid[guildid].send("tips: .pでも再生できます")
                 elif error_check == True:
                   error_check = False
   else:  # URLじゃなかったんだね...
