@@ -6,5 +6,5 @@
   
   
   
-  #招待コード
+  # 招待コード
   https://discord.com/api/oauth2/authorize?client_id=888978271860064327&permissions=517580643136&scope=bot
