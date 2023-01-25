@@ -1,4 +1,5 @@
 from calendar import c
+import math
 from distutils.log import debug, error
 from itertools import count
 from multiprocessing.connection import answer_challenge
@@ -23,7 +24,6 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import _Response, Request
 
 import func_youtube as fy
-
 
 #Tokenを取得
 nn = os.path.dirname(os.path.abspath(__file__))
@@ -74,21 +74,27 @@ guildid = 0
 channelid = {}
 error_count = 0
 error_check = False
-
+play_queue = {}
 #devkeyの有無
 if DEVELOPER_KEY == "no":
   you = False
 
 #キューの設定
 async def enqueue(voice_client, youtube_ur):
-    global queue_dict,guildid
+    global queue_dict,guildid,play_queue
     guildid = voice_client.guild.id 
-
-    queue_dict.setdefault(guildid,[]).append(youtube_ur)
+    play_queue.setdefault(guildid,[]).append(youtube_ur)
+    queue_dict.setdefault(guildid,{})
+    queue_dict[guildid].setdefault(youtube_ur,[])
+    id_temp = youtube_ur.split("=")
+    ids = id_temp[1]
+    title_thum = await fy.youtube_title(ids,guildid)
+    queue_dict[guildid][youtube_ur] = title_thum
+    print(play_queue)
     print(queue_dict)
     
     if not voice_client.is_playing():
-        await ytl(queue_dict,guildid)
+        await ytl(play_queue,guildid)
     else:
       return
 
@@ -113,38 +119,24 @@ async def ytl(que,guildid):
       print("I have too many ERRORs! Please check the code!")
       await ende(que,guildid)
 
-async def streamings(que,guildid):
-  global voice,t,ended,titl,meme,looping,loopingskip,videde,videid,error_count,chanid,error_check
-  ai = que[guildid][0]
-  videid = ai
-  try:
-    song = pafy.new(videid)
-    audio = song.getbestaudio()
-    source = FFmpegPCMAudio(audio.Stream.url, **FFMPEG_OPTIONS)
-    voice[guildid].play(source,after= lambda e: run(ende(que,guildid))) #流す
-  except:
-    error_count = error_count + 1
-    if error_count <= 5:
-      print(error_count)
-      await streamings(que,guildid)
-    elif error_count >= 6:
-      error_check = True
-      await chanid[guildid].send("エラーが発生しました。")
-      print("I have too many ERRORs! Please check the code!")
-      await ende(que,guildid) 
-
 #終了後にqueueの先頭を削除
 async def ende(queu,guildid):
   print("done")
-  global ended,qloo,looping,chanid,error_count
+  global ended,qloo,looping,chanid,error_count,queue_dict
   error_count = 0
   print(queu[guildid])
+  now_queue = queu[guildid][0]
   if qloo[guildid] == 0 and looping[guildid] == 0:
-    if len(queu[guildid]) >= 2:  
+    if len(queu[guildid]) >= 2: 
       del queu[guildid][0]
+      if now_queue not in queu[guildid]:
+        del queue_dict[guildid][now_queue]
       await ytl(queu,guildid)
     elif len(queu[guildid]) == 1:
       del queu[guildid][0]
+      if now_queue not in queu[guildid]:
+        del queue_dict[guildid][now_queue]
+      print(queue_dict[guildid])
       print(queu[guildid])
       return
     else:
@@ -191,7 +183,7 @@ async def on_ready():
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-  global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,looping,titl,elect,meme,print_title,queue_title,count_music,loopingskip,videid,chanid,vcid
+  global voice,player,youtube_url,url,sss,argparser,videde,queue_dict,play_queue,ended,qloo,looping,titl,elect,meme,print_title,queue_title,count_music,loopingskip,videid,chanid,vcid
 
   if before.channel != None and vcid != {}:
     befoguild = {}
@@ -207,6 +199,7 @@ async def on_voice_state_update(member, before, after):
           qloo[guildid] = 0
           looping[guildid] = 0
           queue_dict[guildid].clear()
+          play_queue[guildid].clear()
           if voice[guildid].is_playing():
             voice[guildid].stop()
 
@@ -224,8 +217,7 @@ async def on_voice_state_update(member, before, after):
 
 @bot.listen() #イベントを追加
 async def on_message(message): #メッセージの確認
-
-    global channelid,voice,player,youtube_url,url,sss,argparser,videde,queue_dict,ended,qloo,looping,titl,elect,meme,print_title,queue_title,count_music,loopingskip,videid,chanid,vcid,you
+    global channelid,voice,player,youtube_url,url,sss,argparser,videde,queue_dict,play_queue,ended,qloo,looping,titl,elect,meme,print_title,queue_title,count_music,loopingskip,videid,chanid,vcid,you
     guildid = message.guild.id
     if elect == 1: #候補選択 
       if message.channel != None and chanid != {}:
@@ -271,9 +263,6 @@ async def on_message(message): #メッセージの確認
           titl[guildid] = []
           elect = 0
 
-
-
-
 #コマンドたち
 @bot.command()
 async def move(message): #vcを移動する
@@ -285,12 +274,13 @@ async def move(message): #vcを移動する
 
 @bot.command()
 async def clear(message):  #キューをクリア
-    global queue_dict,guildid,chanid
+    global queue_dict,guildid,chanid,play_queue
     guildid = message.guild.id
     async with chanid[guildid].typing():
         await asyncio.sleep(1)
         await chanid[guildid].send("キューをリセットしました.")
-    queue_dict[guildid] = []
+    queue_dict[guildid] = {}
+    play_queue[guildid] = []
     ff = await random_tips()
     ran = ff
     if ran == 1:
@@ -313,45 +303,35 @@ async def pause(message):
 
 @bot.command()
 async def cl(message):
-    global queue_dict,guildid,chanid
+    global queue_dict,guildid,chanid,play_queue
     guildid = message.guild.id
     async with chanid[guildid].typing():
         await asyncio.sleep(1)
         await chanid[guildid].send("キューをリセットしました.")
-    queue_dict[guildid] = []
+    queue_dict[guildid] = {}
+    play_queue[guildid] = []
 
 
 @bot.command()
 async def remove(message, aft): #キューの中の曲を削除
-    global queue_dict,guildid,chanid
+    global queue_dict,guildid,chanid,play_queue
     guildid = message.guild.id
     if aft.isdecimal() == False:
         return
     if aft == "1":
         await chanid[guildid].send("現在再生している曲です")
       
-    elif int(aft) > len(queue_dict[guildid]):
+    elif int(aft) > len(play_queue[guildid]):
         await chanid[guildid].send("範囲外です")
         return
     else:
         remint = int(aft) - 1
-        temp = queue_dict[guildid][remint]
-        del queue_dict[guildid][remint]
+        temp = play_queue[guildid][remint]
+        del queue_dict[guildid][temp]
+        del play_queue[guildid][remint]
         await chanid[guildid].send(temp + " を削除しました")
         print(queue_dict)
-        
-
-@bot.command()
-async def pr_title(message):#検索時にタイトルのみにする
-  global guildid,chanid,print_title
-  guildid = message.guild.id
-  if print_title[guildid] == 0:
-    print_title[guildid] = 1
-    await chanid[guildid].send("検索時にタイトルのみ表示します。")
-  elif print_title[guildid] == 1:
-    print_title[guildid] = 0
-    await chanid[guildid].send("検索時にURLも表示します。")
-
+        print(play_queue)
 
 @bot.command()
 async def info(message):#botの情報
@@ -370,12 +350,13 @@ async def help(message):#botのコマンド
 
 @bot.command()
 async def dc(message):
-    global queue_dict,qloo,looping,voice,guildid,chanid#切断
+    global queue_dict,qloo,looping,voice,guildid,chanid,play_queue#切断
     guildid = message.guild.id
     chanid[guildid] = bot.get_channel(message.channel.id)
     qloo[guildid] = 0
     looping[guildid] = 0
     queue_dict[guildid].clear()
+    play_queue.clear()
     if voice[guildid].is_playing():
         voice[guildid].stop()
 
@@ -390,7 +371,7 @@ async def dc(message):
         
 @bot.command()
 async def join(message):
-  global voice,guildid,queue_dicte
+  global voice,guildid,queue_dict,play_queue
   voiceid = message.author.voice
   guildid = message.guild.id
   voice.setdefault(guildid,None)
@@ -399,7 +380,8 @@ async def join(message):
                             chanid[guildid] = bot.get_channel(message.channel.id)
                             vcid[guildid] = message.author.voice.channel.id
                             channelid[guildid] = message.channel.id
-                            queue_dict.setdefault(guildid,[])
+                            queue_dict.setdefault(guildid,{})
+                            play_queue.setdefault(guildid,[])
                             print(channelid)
                             print(channelid[guildid])
   elif vcid[guildid] != message.author.voice.channel.id:
@@ -418,52 +400,103 @@ async def join(message):
       #  await message.channel.send("キューの表示時にURLも表示します。")
 
 @bot.command()
-async def queue(message):#キューの中身を表示させる。デザインを変えたいね.
-    global queue_dict,qloo,looping,chanid,guildid
+async def queue(message):#キューの中身を表示させる。
+    global queue_dict, qloo, looping, chanid, guildid
     guildid = message.guild.id
-     # if queue_title == 0:
+    # if queue_title == 0:
     count_music = 1
-    for spt in queue_dict[guildid]:
-        await chanid[guildid].send(str(count_music)+":"+spt)
-        count_music = count_music + 1
-    if qloo[guildid] == 1:
-        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
-    elif qloo[guildid] == 0:
-        await chanid[guildid].send("queueloop: \N{Cross Mark}")
-    if looping[guildid] == 1:
-        await chanid[guildid].send("loop: \N{Heavy Large Circle}")
-    if looping[guildid] == 0:
-        await chanid[guildid].send("loop: \N{Cross Mark}")
+    channels = chanid[guildid]
+    loop_info = looping[guildid]
+    qlp_info = qloo[guildid]
+    queue_info = play_queue[guildid]
+    embed = discord.Embed(
+        title="Queue", description="現在のQueueの内容", color=discord.Colour.red())
+    if len(queue_info) <= 25:
+      for spt in queue_info:
+          embed.add_field(
+              name=f"`{count_music}` {queue_dict[guildid][spt][0]}", value=f"( {spt} )", inline=False)
+          count_music = count_music + 1
+      await channels.send(embed=embed)
+    elif len(queue_info) > 25:
+      s = 0
+      pages = math.ceil(len(queue_info)/25)
+      for content in queue_info:
+          info_temp = queue_info[s:s+25:1]
+          print(info_temp)
+          for spt in info_temp:
+            embed.add_field(
+                name=f"`{count_music}` {queue_dict[guildid][spt][0]}", value=f"( {spt} )", inline=False)
+            count_music = count_music + 1
+          if s >= len(queue_info):
+            break
+          await channels.send(embed=embed)
+          embed.clear_fields()
+          s = s + 25
+
+    if qlp_info == 1:
+        await channels.send("queueloop: \N{Heavy Large Circle}")
+    elif qlp_info == 0:
+        await channels.send("queueloop: \N{Cross Mark}")
+    if loop_info == 1:
+        await channels.send("loop: \N{Heavy Large Circle}")
+    if loop_info == 0:
+        await channels.send("loop: \N{Cross Mark}")
     ff = await random_tips()
     ran = ff
     if ran == 1:
       await chanid[guildid].send("Tips: .qでもキューを表示できます")
 
+
 @bot.command()
-async def q(message):
-    global queue_dict,qloo,looping,chanid,guildid
+async def q(message):  # キューの中身を表示させる。
+    global queue_dict, qloo, looping, chanid, guildid
     guildid = message.guild.id
-     # if queue_title == 0:
+    # if queue_title == 0:
     count_music = 1
-    for spt in queue_dict[guildid]:
-        await chanid[guildid].send(str(count_music)+":"+spt)
-        count_music = count_music + 1
-    if qloo[guildid] == 1:
-        await chanid[guildid].send("queueloop: \N{Heavy Large Circle}")
-    elif qloo[guildid] == 0:
-        await chanid[guildid].send("queueloop: \N{Cross Mark}")
-    if looping[guildid] == 1:
-        await chanid[guildid].send("loop: \N{Heavy Large Circle}")
-    if looping[guildid] == 0:
-        await chanid[guildid].send("loop: \N{Cross Mark}")
+    channels = chanid[guildid]
+    loop_info = looping[guildid]
+    qlp_info = qloo[guildid]
+    queue_info = play_queue[guildid]
+    embed = discord.Embed(title="Queue", description="現在のQueueの内容",color=discord.Colour.red())
+    embed.set_thumbnail(url=queue_dict[guildid][play_queue[guildid][0]][1])
+    if len(queue_info) <= 25:
+      for spt in queue_info:
+          embed.add_field(name=f"`{count_music}` {queue_dict[guildid][spt][0]}", value=f"( {spt} )",inline=False)
+          count_music = count_music + 1
+      await channels.send(embed=embed)
+    elif len(queue_info) > 25:
+      s = 0
+      pages = math.ceil(len(queue_info)/25)
+      for content in queue_info:
+          info_temp = queue_info[s:s+25:1]
+          print(info_temp)
+          for spt in info_temp:
+            embed.add_field(name=f"`{count_music}` {queue_dict[guildid][spt][0]}",value= f"( {spt} )",inline=False)
+            count_music = count_music + 1
+          if s >= len(queue_info):
+            break
+          await channels.send(embed=embed)
+          embed.clear_fields()
+          s = s + 25
+
+
+    if qlp_info == 1:
+        await channels.send("queueloop: \N{Heavy Large Circle}")
+    elif qlp_info == 0:
+        await channels.send("queueloop: \N{Cross Mark}")
+    if loop_info == 1:
+        await channels.send("loop: \N{Heavy Large Circle}")
+    if loop_info == 0:
+        await channels.send("loop: \N{Cross Mark}")
+    
 
 @bot.command()
 async def skip(message):#流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
-    global voice,queue_dict,guildid,chanid
+    global voice,queue_dict,guildid,chanid,play_queue
     guildid = message.guild.id
     voice[guildid].stop()
-    if len(queue_dict[guildid]) > 1:
-     await chanid[guildid].send("再生: " + queue_dict[guildid][1])
+    if len(play_queue[guildid]) > 1:
+     await chanid[guildid].send("再生: " + play_queue[guildid][1])
     ff = await random_tips()
     ran = ff
     if ran == 1:
@@ -471,11 +504,11 @@ async def skip(message):#流れている曲をスキップ。stopするだけで
 
 @bot.command()
 async def s(message):#流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
-    global voice,queue_dict,guildid,chanid
+    global voice,queue_dict,guildid,chanid,play_queue
     guildid = message.guild.id
     voice[guildid].stop()
-    if len(queue_dict[guildid]) > 1:
-     await chanid[guildid].send("再生: " + queue_dict[guildid][1])
+    if len(play_queue[guildid]) > 1:
+     await chanid[guildid].send("再生: " + play_queue[guildid][1])
 
 @bot.command()
 async def loop(message):#一曲のみのloopingをon,offする
@@ -546,42 +579,43 @@ async def lpinfo(message):#loopingの状態を確認
 
 @bot.command()
 async def skipto(message,aft):#指定した曲を再生する
-    global queue_dict,voice,guildid,chanid
+    global queue_dict,voice,guildid,chanid,play_queue
     guildid = message.guild.id
     if aft.isdecimal() == False:
         return
     elif aft == "1":
         await chanid[guildid].send("現在再生している曲です")
-    elif int(aft) > len(queue_dict[guildid]):
+    elif int(aft) > len(play_queue[guildid]):
         await chanid[guildid].send("範囲外です") #範囲外か判断する
     else:
         num = int(aft) -1
         poping = int(aft)
-        queue_dict[guildid].insert(1,queue_dict[guildid][num])
-        del queue_dict[guildid][poping]
+        play_queue[guildid].insert(1,play_queue[guildid][num])
+        del play_queue[guildid][poping]
         voice[guildid].stop()
-        await chanid[guildid].send("再生: " + queue_dict[guildid][1])
+        await chanid[guildid].send("再生: " + play_queue[guildid][1])
     ff = await random_tips()
     ran = ff
     if ran == 1:
       await chanid[guildid].send("Tips: .sktでもskip toできます")
+
 @bot.command()
 async def skt(message,aft):#指定した曲を再生する
-    global queue_dict,voice,guildid,chanid
+    global queue_dict, voice, guildid, chanid, play_queue
     guildid = message.guild.id
     if aft.isdecimal() == False:
         return
     elif aft == "1":
         await chanid[guildid].send("現在再生している曲です")
-    elif int(aft) > len(queue_dict[guildid]):
-        await chanid[guildid].send("範囲外です") #範囲外か判断する
+    elif int(aft) > len(play_queue[guildid]):
+        await chanid[guildid].send("範囲外です")  # 範囲外か判断する
     else:
-        num = int(aft) -1
+        num = int(aft) - 1
         poping = int(aft)
-        queue_dict[guildid].insert(1,queue_dict[guildid][num])
-        del queue_dict[guildid][poping]
+        play_queue[guildid].insert(1, play_queue[guildid][num])
+        del play_queue[guildid][poping]
         voice[guildid].stop()
-        await chanid[guildid].send("再生: " + queue_dict[guildid][1])
+        await chanid[guildid].send("再生: " + play_queue[guildid][1])
 
 
 @bot.command()
@@ -590,7 +624,7 @@ async def random_recommend(message): #おすすめリストからランダムに
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,play_queue
     chanid = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -630,7 +664,7 @@ async def racom(message): #おすすめリストからランダムに1つURLを�
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,play_queue
     chanid = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -670,7 +704,7 @@ async def randomplay(message,aft):#検索ワードリストから指定した数
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,play_queue
     if you ==False:
         await message.channel.send("制限モードでは検索機能は使えません。TOKEN.txtのYoutube_API_KEYにyoutube v3 APIのkeyを入力してください。")
         return
@@ -730,7 +764,7 @@ async def rap(message,aft):#検索ワードリストから指定した数言葉�
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,play_queue
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -813,7 +847,7 @@ async def recommend(message):#おすすめリストを全てキューに入れ�
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,play_queue
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -851,7 +885,7 @@ async def racoms(message):#おすすめリストを全てキューに入れる
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,play_queue
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)  
@@ -889,7 +923,7 @@ async def search(message,*,aft):#検索する。動画idを取得して、youtub
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music,play_queue
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -945,7 +979,7 @@ async def sc(message,*,aft):#検索する。動画idを取得して、youtubeの
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,print_title,count_music,play_queue
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -1001,7 +1035,7 @@ async def play_one_song(message,*,aft):#1曲のみ検索する 動作速度を�
     guildid = message.guild.id
     print(guildid)
     voiceid = message.author.voice
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,count_music
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,count_music,play_queue
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
     qloo.setdefault(guildid,0)
@@ -1046,7 +1080,7 @@ async def pos(message,*,aft):#1曲のみ検索する 動作速度を優先した
     global guildid
     guildid = message.guild.id
     print(guildid)
-    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,looping,qloo,count_music
+    global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,looping,qloo,count_music,play_queue
     await asyncio.sleep(0.1)
     chanid[guildid] = bot.get_channel(message.channel.id)
     looping.setdefault(guildid,0)
@@ -1091,13 +1125,15 @@ async def pos(message,*,aft):#1曲のみ検索する 動作速度を優先した
           await asyncio.sleep(0.5)
           await chanid[guildid].send("キューに追加: "+q)
 
+
+#playlistを展開しキューに入れる
 @bot.command()
 async def playlist(message,*,aft):
   global guildid
   guildid = message.guild.id
   print(guildid)
   voiceid = message.guild.id
-  global chanid,voice,queue_dict,vcid,looping,qloo,print_title
+  global chanid,voice,queue_dict,vcid,looping,qloo,print_title,play_queue
   print("aft: "+aft)
   voice.setdefault(guildid,None)
   looping.setdefault(guildid,0)
@@ -1149,7 +1185,7 @@ async def pl(message, *, aft):
   guildid = message.guild.id
   print(guildid)
   voiceid = message.guild.id
-  global chanid, voice, queue_dict, vcid, looping, qloo, print_title
+  global chanid, voice, queue_dict, vcid, looping, qloo, print_title,play_queue
   print("aft: "+aft)
   voice.setdefault(guildid, None)
   looping.setdefault(guildid, 0)
@@ -1200,7 +1236,7 @@ async def play(message,*,aft):#指定されたURLの曲を流す。
   guildid = message.guild.id
   print(guildid)
   voiceid = message.author.voice
-  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music,error_check
+  global chanid,voice,queue_dict,vcid,sss,elect,videde,titl,channelid,qloo,looping,print_title,count_music,error_check,play_queue
   print("aft:"+aft)
   voice.setdefault(guildid,None)
   looping.setdefault(guildid,0)
@@ -1329,7 +1365,7 @@ async def p(message,*,aft):#指定されたURLの曲を流す。
   guildid = message.guild.id
   print(guildid)
   voiceid = message.author.voice
-  global chanid, voice, queue_dict, vcid, sss, elect, videde, titl, channelid, qloo, looping, print_title, count_music, error_check
+  global chanid, voice, queue_dict, vcid, sss, elect, videde, titl, channelid, qloo, looping, print_title, count_music, error_check,play_queue
   print("aft:"+aft)
   voice.setdefault(guildid, None)
   looping.setdefault(guildid, 0)
@@ -1448,10 +1484,6 @@ if __name__ == '__main__': #起動
   bot.run(TOKEN)
 
 #やりたいことリスト
-#
-#
-#
-#
 #
 #
 #

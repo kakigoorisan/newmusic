@@ -15,6 +15,8 @@ titl={}
 ser = {}
 sati = {}
 playlist_video={}
+titles = {}
+samn = {}
 #Tokenを取得
 nn = os.path.dirname(os.path.abspath(__file__))
 with open(f"{nn}/TOKEN.txt", "r",encoding="utf-8") as temp_file:
@@ -121,4 +123,24 @@ async def youtube_list(url,guildid):
       playlist_video[guildid].append(play_list["contentDetails"]["videoId"])
   print(playlist_video[guildid])
   return(playlist_video,guildid)
+
+#IDからサムネURL,titleを取得
+async def youtube_title(ids,guildid):
+  global titles,samn
+  titles[guildid] = ""
+  samn[guildid] = ""
+  youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
+    developerKey=DEVELOPER_KEY)
+  getting_id = youtube.videos().list(
+    part ="id,snippet",
+    id = ids
+  ).execute()
+  thum = getting_id.get("items",[])
+  if thum[0]["kind"] == "youtube#video":
+      titles[guildid] = thum[0]["snippet"]["title"]
+      samn[guildid] = thum[0]["snippet"]["thumbnails"]["default"]["url"]
+  print(titles)
+  print(samn)
+  return titles[guildid],samn[guildid]
+
 
