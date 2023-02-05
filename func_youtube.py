@@ -129,9 +129,20 @@ async def youtube_title(ids,guildid):
     id = ids
   ).execute()
   thum = getting_id.get("items",[])
-  if thum[0]["kind"] == "youtube#video":
-      titles[guildid] = thum[0]["snippet"]["title"]
-      samn[guildid] = thum[0]["snippet"]["thumbnails"]["default"]["url"]
+  print(thum)
+  try:
+    if thum[0]["kind"] == "youtube#video":
+      try:
+        titles[guildid] = thum[0]["snippet"]["title"]
+      except:
+        titles[guildid] = "Unknown"
+      try:
+        samn[guildid] = thum[0]["snippet"]["thumbnails"]["default"]["url"]
+      except:
+        samn[guildid] = "Unknown"
+  except:
+    titles[guildid] = "Unknown"
+    samn[guildid] = "Unknown"
   print(titles)
   print(samn)
   return titles[guildid],samn[guildid]
