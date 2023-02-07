@@ -292,8 +292,6 @@ async def pause(message):
     voice[guildid].resume()
 
 
-
-
 @bot.command()
 async def cl(message):
     global queue_dict,guildid,chanid,play_queue
@@ -502,6 +500,7 @@ async def shuffle(message):
   guildid = message.guild.id
   await chanid[guildid].send("キューをシャッフルします")
   temp = play_queue[guildid][0]
+  del play_queue[guildid][0]
   random.shuffle(play_queue[guildid])
   play_queue[guildid].insert(0, temp)
   print(play_queue)
@@ -512,13 +511,10 @@ async def shl(message):
   guildid = message.guild.id
   await chanid[guildid].send("キューをシャッフルします")
   temp = play_queue[guildid][0]
+  del play_queue[guildid][0]
   random.shuffle(play_queue[guildid])
   play_queue[guildid].insert(0,temp)
   print(play_queue)
-
-
-
-    
 
 @bot.command()
 async def skip(message):#流れている曲をスキップ。stopするだけで、曲が終了したときの処理が起こる
