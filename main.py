@@ -1,5 +1,5 @@
 import pafy
-from discord import FFmpegPCMAudio
+from discord import FFmpegPCMAudio,PCMVolumeTransformer
 import discord
 from discord.ext import commands
 from discord import player
@@ -92,7 +92,9 @@ async def ytl(que,guildid):
   try:
     song = pafy.new(videid) #pafyに引数を渡す
     audio= song.getbestaudio()  
-    source= FFmpegPCMAudio(audio.url, **FFMPEG_OPTIONS)  
+    source= FFmpegPCMAudio(audio.url, **FFMPEG_OPTIONS)
+    print(source.is_opus())
+    source = PCMVolumeTransformer(source,volume=0.1)  
     voice[guildid].play(source,after= lambda e : run(ende(que,guildid,ai))) #流す 
   except:
     error_count = error_count + 1
